@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dart Scorer 301</title>
+<style>
+body { font-family: Arial; background:#111; color:white; text-align:center; }
+button { padding:10px; margin:5px; font-size:18px; }
+.player { border:1px solid #444; margin:10px; padding:10px; }
+.active { border:2px solid lime; }
+</style>
+</head>
+<body>
+
+<h2>Dart Scorer 301</h2>
+
+<div id="setup">
+Spieler (1-6):
+<select id="playerCount">
+<option>1</option>
+<option selected>2</option>
+<option>3</option>
+<option>4</option>
+<option>5</option>
+<option>6</option>
+</select>
+
+Double In:
+<select id="doubleIn">
+<option value="true">AN</option>
+<option value="false">AUS</option>
+</select>
+
+Out:
+<select id="doubleOut">
+<option value="double">Double Out</option>
+<option value="straight">Straight Out</option>
+</select>
+
+<br><br>
+<button onclick="startGame()">Start</button>
+</div>
+
+<div id="game" style="display:none;"></div>
+
+<script>
+
+let players = [];
+let current = 0;
+let doubleIn = true;
+let outMode = "double";
+
+function startGame() {
+let count = parseInt(document.getElementById("playerCount").value);
+doubleIn = document.getElementById("doubleIn").value === "true";
+outMode = document.getElementById("doubleOut").value;
+
+players = [];
+
+for(let i=0;i<count;i++){
+players.push({
+score:301,
+opened:!doubleIn,
+won:false
+});
+}
+
+document.getElementById("setup").style.display="none";
+document.getElementById("game").style.display="block";
+
+render();
+}
+
+function render(){
+let html="";
+players.forEach((p,i)=>{
+html+=`
+<div class="player ${i===current?'active':''}">
+<h3>Spieler ${i+1} ${p.won?'✅':''}</h3>
+<h1>${p.score}</h1>
+<input type="number" id="input${i}" placeholder="Punkte" ${i!==current||p.won?'disabled':''}>
+<button onclick="throwDarts(${i})" ${i!==current||p.won?'disabled':''}>OK</button>
+</div>
+`;
+});
+document.getElementById("game").innerHTML=html;
+}
+
+function throwDarts(i){
+let val=parseInt(document.getElementById("
