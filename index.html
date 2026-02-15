@@ -1,177 +1,265 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dart Scorer 301</title>
 
 <style>
-body { 
-  font-family: Arial, sans-serif; 
-  background:#111; 
-  color:white; 
-  text-align:center; 
-  margin:0;
-}
-
-h2 { margin-top:20px; }
-
-button { 
-  padding:10px; 
-  margin:5px; 
-  font-size:16px; 
-  cursor:pointer;
-}
-
-select, input {
-  padding:8px;
-  margin:5px;
-  font-size:16px;
-}
-
-.player { 
-  border:1px solid #444; 
-  margin:10px; 
-  padding:10px; 
-  border-radius:8px;
-}
-
-.active { 
-  border:2px solid lime; 
-}
-
-.score {
-  font-size:32px;
-  font-weight:bold;
-}
+  body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    margin: 0;
+  }
+  h2 { margin: 18px 0 10px; }
+  .topbar {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  button {
+    padding: 10px 14px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #1b1b1b;
+    color: #fff;
+  }
+  button:disabled { opacity: 0.45; cursor: default; }
+  select, input {
+    padding: 8px;
+    margin: 5px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #1b1b1b;
+    color: #fff;
+    width: 110px;
+    text-align: center;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 12px; }
+  .player {
+    border: 1px solid #444;
+    margin: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #151515;
+  }
+  .active { border: 2px solid lime; }
+  .score { font-size: 38px; font-weight: bold; margin: 6px 0 10px; }
+  .sub { color: #aaa; font-size: 13px; margin-top: 6px; line-height: 1.3; }
+  .row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .mini { width: 90px; }
+  .pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid #333;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #bbb;
+    margin-left: 8px;
+  }
 </style>
 </head>
 
 <body>
 
-<h2>🎯 Dart Scorer 301</h2>
+<div class="topbar">
+  <strong>🎯 Dart Scorer 301</strong>
 
-<div id="setup">
-Spieler (1-6):
-<select id="playerCount">
-<option>1</option>
-<option selected>2</option>
-<option>3</option>
-<option>4</option>
-<option>5</option>
-<option>6</option>
-</select>
+  <span>Spieler (1–6):</span>
+  <select id="playerCount">
+    <option>1</option>
+    <option selected>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+  </select>
 
-Double In:
-<select id="doubleIn">
-<option value="true">AN</option>
-<option value="false">AUS</option>
-</select>
+  <span>Double In:</span>
+  <select id="doubleIn">
+    <option value="true" selected>AN</option>
+    <option value="false">AUS</option>
+  </select>
 
-Out:
-<select id="outMode">
-<option value="double">Double Out</option>
-<option value="straight">Straight Out</option>
-</select>
+  <span>Out:</span>
+  <select id="outMode">
+    <option value="double" selected>Double Out</option>
+    <option value="straight">Straight Out</option>
+  </select>
 
-<br><br>
-<button onclick="startGame()">Start</button>
+  <button id="startBtn">Start / Neues Spiel</button>
 </div>
 
-<div id="game"></div>
+<div class="wrap">
+  <div id="game"></div>
+</div>
 
 <script>
+  // Regeln / Hinweis:
+  // - Eingabe pro Aufnahme: 3 Felder (je Pfeil).
+  // - Werte: 0 bis 180 je Feld (praktisch: du trägst pro Dart den erzielten Punktewert ein).
+  // - Double-In / Double-Out sind hier "vereinfacht" anhand der letzten/ersten Aufnahme nur über "gerade/ungerade" NICHT perfekt abbildbar.
+  //   Wenn du echte D20/T19/DB Logik willst (Token-Eingabe), kann ich das als Upgrade bauen.
+  // - Bust: unter 0 oder (Double-Out & Rest = 1) → Score bleibt unverändert.
 
-let players = [];
-let current = 0;
-let doubleIn = true;
-let outMode = "double";
+  let players = [];
+  let current = 0;
+  let doubleIn = true;
+  let outMode = "double";
 
-function startGame() {
-  const count = parseInt(document.getElementById("playerCount").value);
-  doubleIn = document.getElementById("doubleIn").value === "true";
-  outMode = document.getElementById("outMode").value;
+  const $ = (id) => document.getElementById(id);
 
-  players = [];
+  function startGame() {
+    const count = parseInt($("playerCount").value, 10);
+    doubleIn = $("doubleIn").value === "true";
+    outMode = $("outMode").value;
 
-  for(let i=0;i<count;i++){
-    players.push({
-      score:301,
-      opened:!doubleIn,
-      won:false
-    });
+    players = [];
+    for (let i = 0; i < count; i++) {
+      players.push({
+        score: 301,
+        opened: !doubleIn,
+        won: false
+      });
+    }
+    current = 0;
+    render();
   }
 
-  current = 0;
-  render();
-}
+  function render() {
+    let html = "";
+    players.forEach((p, i) => {
+      const disabled = (i !== current || p.won) ? "disabled" : "";
+      const statusDI = doubleIn ? (p.opened ? "open" : "closed") : "aus";
 
-function render(){
-  let html = "";
+      html += `
+        <div class="player ${i === current ? "active" : ""}">
+          <h3>Spieler ${i + 1} ${p.won ? "✅" : ""}<span class="pill">DI: ${statusDI} · Out: ${outMode}</span></h3>
+          <div class="score">${p.score}</div>
 
-  players.forEach((p,i)=>{
-    html += `
-    <div class="player ${i===current?'active':''}">
-      <h3>Spieler ${i+1} ${p.won?'✅':''}</h3>
-      <div class="score">${p.score}</div>
-      <input type="number" id="input${i}" placeholder="Punkte (0-180)" ${i!==current||p.won?'disabled':''}>
-      <button onclick="submitScore(${i})" ${i!==current||p.won?'disabled':''}>OK</button>
-    </div>
-    `;
-  });
+          <div class="row">
+            <input class="mini" type="number" inputmode="numeric" id="d1_${i}" placeholder="Dart 1" ${disabled} min="0" max="180">
+            <input class="mini" type="number" inputmode="numeric" id="d2_${i}" placeholder="Dart 2" ${disabled} min="0" max="180">
+            <input class="mini" type="number" inputmode="numeric" id="d3_${i}" placeholder="Dart 3" ${disabled} min="0" max="180">
+            <button onclick="submitDarts(${i})" ${disabled}>OK</button>
+          </div>
 
-  document.getElementById("game").innerHTML = html;
-}
+          <div class="sub">
+            Tipp: Lass Felder leer = 0. Bust: Score bleibt. (Double-Out: Rest=1 ist Bust)
+          </div>
+        </div>
+      `;
+    });
 
-function submitScore(i){
-  const val = parseInt(document.getElementById("input"+i).value);
-  if(isNaN(val) || val < 0 || val > 180) return;
+    $("game").innerHTML = html;
 
-  const p = players[i];
+    // Enter-Handling für aktiven Spieler: Enter im 3. Feld → OK
+    const i = current;
+    const a = $("d1_" + i);
+    const b = $("d2_" + i);
+    const c = $("d3_" + i);
+    if (a && !a.disabled) {
+      a.focus();
+      a.addEventListener("keydown", (e) => { if (e.key === "Enter") b.focus(); }, { once: true });
+      b.addEventListener("keydown", (e) => { if (e.key === "Enter") c.focus(); }, { once: true });
+      c.addEventListener("keydown", (e) => { if (e.key === "Enter") submitDarts(i); }, { once: true });
+    }
+  }
 
-  // Double-In
-  if(!p.opened){
-    if(val % 2 === 0 && val > 0){
-      p.opened = true;
-    } else {
+  function valOrZero(x) {
+    const v = parseInt(x, 10);
+    return Number.isFinite(v) ? v : 0;
+  }
+
+  function submitDarts(i) {
+    if (i !== current) return;
+    const p = players[i];
+    if (p.won) return;
+
+    const d1 = valOrZero($("d1_" + i)?.value);
+    const d2 = valOrZero($("d2_" + i)?.value);
+    const d3 = valOrZero($("d3_" + i)?.value);
+
+    // optional: leeren wir direkt, damit es sich "snappy" anfühlt
+    if ($("d1_" + i)) $("d1_" + i).value = "";
+    if ($("d2_" + i)) $("d2_" + i).value = "";
+    if ($("d3_" + i)) $("d3_" + i).value = "";
+
+    // Plausibilitätscheck (nicht zu streng, aber schützt vor Tippfehlern)
+    if (d1 < 0 || d2 < 0 || d3 < 0 || d1 > 180 || d2 > 180 || d3 > 180) {
+      render();
+      return;
+    }
+
+    const total = d1 + d2 + d3;
+
+    // Double-In (vereinfacht):
+    // Wenn noch nicht open → Aufnahme zählt nur, wenn total > 0 UND total gerade ist
+    // (Das ist eine Vereinfachung. Für echte Dart-Logik brauchst du Token-Eingabe wie D20/T19/DB.)
+    if (!p.opened) {
+      if (total > 0 && total % 2 === 0) {
+        p.opened = true;
+      } else {
+        nextPlayer();
+        render();
+        return;
+      }
+    }
+
+    const newScore = p.score - total;
+
+    // Bust
+    if (newScore < 0 || (outMode === "double" && newScore === 1)) {
       nextPlayer();
       render();
       return;
     }
-  }
 
-  let newScore = p.score - val;
+    // Checkout
+    if (newScore === 0) {
+      // Double-Out (vereinfacht): total muss gerade sein (eigentlich: letzter Dart muss Double sein)
+      if (outMode === "double" && total % 2 !== 0) {
+        nextPlayer();
+        render();
+        return;
+      }
+      p.score = 0;
+      p.won = true;
+      nextPlayer();
+      render();
+      return;
+    }
 
-  // Bust
-  if(newScore < 0 || (outMode === "double" && newScore === 1)){
+    // Normal
+    p.score = newScore;
     nextPlayer();
     render();
-    return;
   }
 
-  // Checkout
-  if(newScore === 0){
-    if(outMode === "double" && val % 2 !== 0){
-      nextPlayer();
-      render();
-      return;
-    }
-    p.score = 0;
-    p.won = true;
-  } else {
-    p.score = newScore;
+  function nextPlayer() {
+    // next non-won player
+    let tries = 0;
+    do {
+      current = (current + 1) % players.length;
+      tries++;
+      if (tries > players.length + 1) break;
+    } while (players[current].won);
   }
 
-  nextPlayer();
-  render();
-}
+  $("startBtn").addEventListener("click", startGame);
 
-function nextPlayer(){
-  do{
-    current = (current + 1) % players.length;
-  } while(players[current].won);
-}
-
+  // initial
+  startGame();
 </script>
 
 </body>
