@@ -1,19 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dart Scorer 301</title>
+
 <style>
-body { font-family: Arial; background:#111; color:white; text-align:center; }
-button { padding:10px; margin:5px; font-size:18px; }
-.player { border:1px solid #444; margin:10px; padding:10px; }
-.active { border:2px solid lime; }
+body { 
+  font-family: Arial, sans-serif; 
+  background:#111; 
+  color:white; 
+  text-align:center; 
+  margin:0;
+}
+
+h2 { margin-top:20px; }
+
+button { 
+  padding:10px; 
+  margin:5px; 
+  font-size:16px; 
+  cursor:pointer;
+}
+
+select, input {
+  padding:8px;
+  margin:5px;
+  font-size:16px;
+}
+
+.player { 
+  border:1px solid #444; 
+  margin:10px; 
+  padding:10px; 
+  border-radius:8px;
+}
+
+.active { 
+  border:2px solid lime; 
+}
+
+.score {
+  font-size:32px;
+  font-weight:bold;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Dart Scorer 301</h2>
+<h2>🎯 Dart Scorer 301</h2>
 
 <div id="setup">
 Spieler (1-6):
@@ -33,7 +69,7 @@ Double In:
 </select>
 
 Out:
-<select id="doubleOut">
+<select id="outMode">
 <option value="double">Double Out</option>
 <option value="straight">Straight Out</option>
 </select>
@@ -42,7 +78,7 @@ Out:
 <button onclick="startGame()">Start</button>
 </div>
 
-<div id="game" style="display:none;"></div>
+<div id="game"></div>
 
 <script>
 
@@ -52,40 +88,91 @@ let doubleIn = true;
 let outMode = "double";
 
 function startGame() {
-let count = parseInt(document.getElementById("playerCount").value);
-doubleIn = document.getElementById("doubleIn").value === "true";
-outMode = document.getElementById("doubleOut").value;
+  const count = parseInt(document.getElementById("playerCount").value);
+  doubleIn = document.getElementById("doubleIn").value === "true";
+  outMode = document.getElementById("outMode").value;
 
-players = [];
+  players = [];
 
-for(let i=0;i<count;i++){
-players.push({
-score:301,
-opened:!doubleIn,
-won:false
-});
-}
+  for(let i=0;i<count;i++){
+    players.push({
+      score:301,
+      opened:!doubleIn,
+      won:false
+    });
+  }
 
-document.getElementById("setup").style.display="none";
-document.getElementById("game").style.display="block";
-
-render();
+  current = 0;
+  render();
 }
 
 function render(){
-let html="";
-players.forEach((p,i)=>{
-html+=`
-<div class="player ${i===current?'active':''}">
-<h3>Spieler ${i+1} ${p.won?'✅':''}</h3>
-<h1>${p.score}</h1>
-<input type="number" id="input${i}" placeholder="Punkte" ${i!==current||p.won?'disabled':''}>
-<button onclick="throwDarts(${i})" ${i!==current||p.won?'disabled':''}>OK</button>
-</div>
-`;
-});
-document.getElementById("game").innerHTML=html;
+  let html = "";
+
+  players.forEach((p,i)=>{
+    html += `
+    <div class="player ${i===current?'active':''}">
+      <h3>Spieler ${i+1} ${p.won?'✅':''}</h3>
+      <div class="score">${p.score}</div>
+      <input type="number" id="input${i}" placeholder="Punkte (0-180)" ${i!==current||p.won?'disabled':''}>
+      <button onclick="submitScore(${i})" ${i!==current||p.won?'disabled':''}>OK</button>
+    </div>
+    `;
+  });
+
+  document.getElementById("game").innerHTML = html;
 }
 
-function throwDarts(i){
-let val=parseInt(document.getElementById("
+function submitScore(i){
+  const val = parseInt(document.getElementById("input"+i).value);
+  if(isNaN(val) || val < 0 || val > 180) return;
+
+  const p = players[i];
+
+  // Double-In
+  if(!p.opened){
+    if(val % 2 === 0 && val > 0){
+      p.opened = true;
+    } else {
+      nextPlayer();
+      render();
+      return;
+    }
+  }
+
+  let newScore = p.score - val;
+
+  // Bust
+  if(newScore < 0 || (outMode === "double" && newScore === 1)){
+    nextPlayer();
+    render();
+    return;
+  }
+
+  // Checkout
+  if(newScore === 0){
+    if(outMode === "double" && val % 2 !== 0){
+      nextPlayer();
+      render();
+      return;
+    }
+    p.score = 0;
+    p.won = true;
+  } else {
+    p.score = newScore;
+  }
+
+  nextPlayer();
+  render();
+}
+
+function nextPlayer(){
+  do{
+    current = (current + 1) % players.length;
+  } while(players[current].won);
+}
+
+</script>
+
+</body>
+</html>
