@@ -25,12 +25,7 @@
   select{padding:9px 10px}
 
   .wrap{max-width:1200px;margin:0 auto;padding:14px}
-  .card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:12px;
-  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
   .banner{display:none;margin-bottom:12px}
   .banner.show{display:block}
   .banner b{font-weight:800}
@@ -39,15 +34,8 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-  /* Layout: scoreboard + keypad (Desktop) */
-  .layout{
-    display:grid;
-    grid-template-columns: 1fr 520px;
-    gap:12px;
-    align-items:start;
-  }
+  .layout{display:grid;grid-template-columns: 1fr 520px;gap:12px;align-items:start}
 
-  /* Scoreboard list */
   .playerList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   .playerItem{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -59,14 +47,10 @@
   .pMeta{color:var(--muted);font-size:12px;margin-top:2px}
   .pScore{font-size:28px;font-weight:900;min-width:70px;text-align:right}
 
-  /* Namen (oben) */
   .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .nameEdit input{width:180px;text-align:left}
 
-  /* Keypad (single) */
-  .keypadTop{
-    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
-  }
+  .keypadTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   .bigScore{font-size:44px;font-weight:950;margin:8px 0;text-align:center}
   .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .dartBox{
@@ -81,31 +65,18 @@
   .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .modeBtn{background:var(--btn2)}
   .modeBtn.active{outline:2px solid var(--accent)}
-  .nums{
-    display:grid;gap:8px;grid-template-columns:repeat(5,1fr);
-    max-width:520px;margin:0 auto 10px
-  }
+  .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
   .nums button{padding:12px 0}
   .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
-  /* Mobile fix: keypad fixed bottom + page bottom padding so nothing is hidden */
   @media (max-width: 980px){
     .layout{grid-template-columns: 1fr}
-
-    .wrap{
-      /* Platz für das fixe Keypad unten */
-      padding-bottom: calc(520px + env(safe-area-inset-bottom, 0px));
-    }
+    .wrap{padding-bottom: calc(520px + env(safe-area-inset-bottom, 0px));}
     .keypadCard{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      z-index: 50;
-      box-shadow: 0 -10px 30px rgba(0,0,0,.35);
-      max-height: 520px;
-      overflow: auto;
+      position: fixed; left: 12px; right: 12px; bottom: 12px;
+      z-index: 50; box-shadow: 0 -10px 30px rgba(0,0,0,.35);
+      max-height: 520px; overflow: auto;
     }
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
@@ -158,7 +129,6 @@
 <div class="wrap">
   <div id="banner" class="card banner"></div>
 
-  <!-- Namen oben -->
   <div class="card" style="margin-bottom:12px">
     <div class="row">
       <div class="rowLeft">
@@ -172,7 +142,6 @@
   </div>
 
   <div class="layout">
-    <!-- Scoreboard -->
     <div class="card">
       <div class="row">
         <div class="rowLeft">
@@ -186,7 +155,6 @@
       <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel.</div>
     </div>
 
-    <!-- Single Keypad -->
     <div class="card keypadCard">
       <div class="keypadTop">
         <div>
@@ -242,13 +210,19 @@
 
 <script>
 const $ = (id)=>document.getElementById(id);
-const deepCopy = (x)=>JSON.parse(JSON.stringify(x));
+
+// sichere Kopie (ohne externe Lib)
+function clone(obj){
+  // structuredClone ist ideal (Android Chrome neu genug: meistens ja)
+  if (typeof structuredClone === "function") return structuredClone(obj);
+  return JSON.parse(JSON.stringify(obj));
+}
 
 let state = {
   startScore: 301,
   playerCount: 2,
   doubleIn: false,
-  outMode: "straight",     // "straight" (OUT AUS) oder "double" (OUT AN)
+  outMode: "straight",   // OUT AUS = straight, OUT AN = double
   autoOk: true,
 
   players: [],
@@ -259,7 +233,7 @@ let state = {
   dartIdx: 0,
 
   banner: "",
-  history: []
+  history: [] // <-- bleibt leer im Snapshot!
 };
 
 function newPlayer(name){
@@ -273,14 +247,58 @@ function newPlayer(name){
   };
 }
 
+/* =========================
+   ✅ FIX: History speichersicher
+   - Snapshots enthalten NICHT state.history
+   - History-Limit kleiner halten
+========================= */
+const HISTORY_LIMIT = 120;
+
+function snapshot(){
+  return {
+    startScore: state.startScore,
+    playerCount: state.playerCount,
+    doubleIn: state.doubleIn,
+    outMode: state.outMode,
+    autoOk: state.autoOk,
+
+    players: clone(state.players),
+    current: state.current,
+
+    mode: state.mode,
+    darts: clone(state.darts),
+    dartIdx: state.dartIdx,
+
+    banner: state.banner
+  };
+}
+
 function saveState(){
-  state.history.push(deepCopy(state));
-  if(state.history.length>300) state.history.shift();
+  state.history.push(snapshot());
+  if (state.history.length > HISTORY_LIMIT) state.history.shift();
+}
+
+function restoreFromSnap(snap){
+  state.startScore = snap.startScore;
+  state.playerCount = snap.playerCount;
+  state.doubleIn = snap.doubleIn;
+  state.outMode = snap.outMode;
+  state.autoOk = snap.autoOk;
+
+  state.players = clone(snap.players);
+  state.current = snap.current;
+
+  state.mode = snap.mode;
+  state.darts = clone(snap.darts);
+  state.dartIdx = snap.dartIdx;
+
+  state.banner = snap.banner;
 }
 
 function undo(){
   if(!state.history.length) return;
-  state = state.history.pop();
+  const snap = state.history.pop();
+  restoreFromSnap(snap);
   syncControlsFromState();
   renderAll();
 }
@@ -300,7 +318,7 @@ function startGame(){
   state.startScore = parseInt($("startScore").value,10);
   state.playerCount = parseInt($("playerCount").value,10);
   state.doubleIn = $("doubleIn").value==="true";
-  state.outMode = $("outMode").value;                  // straight / double
+  state.outMode = $("outMode").value;
   state.autoOk = $("autoOk").value==="true";
 
   state.players=[];
@@ -310,7 +328,7 @@ function startGame(){
 
   state.current=0;
   state.banner="";
-  state.history=[];
+  state.history=[]; // Reset history on new game
   resetTurn();
   renderAll();
 }
@@ -423,7 +441,7 @@ function submitTurn(){
   p.msg="";
 
   const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}}));
-  let effective = deepCopy(turn);
+  const effective = clone(turn);
 
   // IN (Double-In)
   if(!p.opened && state.doubleIn){
@@ -442,7 +460,6 @@ function submitTurn(){
   const total = effective[0].points + effective[1].points + effective[2].points;
   const newScore = p.score - total;
 
-  // Bust: unter 0 oder (Double-Out & Rest=1)
   if(newScore < 0 || (state.outMode==="double" && newScore===1)){
     p.msg="BUST";
     updateStats(p, 0);
@@ -451,7 +468,6 @@ function submitTurn(){
     return;
   }
 
-  // Checkout
   if(newScore===0){
     if(state.outMode==="double"){
       const last = effective[2];
@@ -478,7 +494,6 @@ function submitTurn(){
     return;
   }
 
-  // Normal
   p.score=newScore;
   p.msg = total>0 ? `−${total}` : "";
   updateStats(p, total);
@@ -547,6 +562,7 @@ function renderNameEdit(){
     inp.value = p.name.startsWith("Spieler ") ? "" : p.name;
     inp.placeholder = p.name;
     inp.addEventListener("input", ()=>{
+      // Namen ändern soll nicht bei jedem Keypress saveState spammen:
       p.name = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
       renderPlayerList();
       renderKeypadHeader();
@@ -637,14 +653,14 @@ $("undoDartBtn").addEventListener("click", undoDart);
 $("clearBtn").addEventListener("click", clearTurn);
 $("okBtn").addEventListener("click", submitTurn);
 
-// Auto-OK darf live umgeschaltet werden (ohne Neustart)
+// Auto-OK live umschaltbar (ohne Neustart)
 $("autoOk").addEventListener("change", ()=>{
   saveState();
   state.autoOk = $("autoOk").value==="true";
   renderRulesPill();
 });
 
-// Startwerte initial in UI setzen (falls Browser cached)
+// defaults (falls Browser cached)
 $("startScore").value = "301";
 $("playerCount").value = "2";
 $("doubleIn").value = "false";
