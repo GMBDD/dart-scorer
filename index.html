@@ -9,6 +9,7 @@
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
     --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
+    --panelSpace: 420px; /* wird per JS für collapse/expand angepasst */
   }
   *{box-sizing:border-box}
   body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}
@@ -26,16 +27,25 @@
 
   .wrap{max-width:1200px;margin:0 auto;padding:14px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+
   .banner{display:none;margin-bottom:12px}
   .banner.show{display:block}
   .banner b{font-weight:800}
+
   .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
   .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px;display:inline-block}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-  .layout{display:grid;grid-template-columns: 1fr 520px;gap:12px;align-items:start}
+  /* Desktop Layout */
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr 520px;
+    gap:12px;
+    align-items:start;
+  }
 
+  /* Scoreboard list */
   .playerList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   .playerItem{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -47,17 +57,33 @@
   .pMeta{color:var(--muted);font-size:12px;margin-top:2px}
   .pScore{font-size:28px;font-weight:900;min-width:70px;text-align:right}
 
+  /* Namen oben */
   .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .nameEdit input{width:180px;text-align:left}
 
-  .keypadTop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  /* Keypad Panel */
+  .keypadTop{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
+  }
+  .panelHeader{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
+  }
+  .panelHeaderLeft{
+    display:flex;flex-direction:column;gap:6px;min-width:0
+  }
+  .panelHeaderRight{
+    display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end
+  }
+
   .bigScore{font-size:44px;font-weight:950;margin:8px 0;text-align:center}
+
   .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .dartBox{
     min-width:110px;padding:10px;border-radius:14px;border:1px solid var(--line);
     background:#0f0f14;text-align:center;font-weight:900
   }
   .dartBox small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+
   .msg{min-height:18px;font-size:13px;color:var(--muted);text-align:center}
   .msg.ok{color:var(--ok)}
   .msg.bad{color:var(--bad)}
@@ -65,19 +91,43 @@
   .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .modeBtn{background:var(--btn2)}
   .modeBtn.active{outline:2px solid var(--accent)}
+
   .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
   .nums button{padding:12px 0}
+
   .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
+  .tiny{font-size:12px;padding:8px 10px}
+  .toggleBtn{background:var(--btn2)}
+
+  /* Mobile: Panel fixed bottom + einklappbar */
   @media (max-width: 980px){
     .layout{grid-template-columns: 1fr}
-    .wrap{padding-bottom: calc(520px + env(safe-area-inset-bottom, 0px));}
-    .keypadCard{
-      position: fixed; left: 12px; right: 12px; bottom: 12px;
-      z-index: 50; box-shadow: 0 -10px 30px rgba(0,0,0,.35);
-      max-height: 520px; overflow: auto;
+
+    .wrap{
+      padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
     }
+
+    .keypadCard{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9999;
+
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -12px 40px rgba(0,0,0,.45);
+
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .keypadCard.collapsed{
+      max-height: 150px; /* nur Header+Score+Darts sichtbar */
+      overflow: hidden;
+    }
+
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
   }
@@ -142,6 +192,7 @@
   </div>
 
   <div class="layout">
+    <!-- Übersicht -->
     <div class="card">
       <div class="row">
         <div class="rowLeft">
@@ -152,22 +203,28 @@
       </div>
 
       <div id="playerList" class="playerList"></div>
-      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel.</div>
+      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel (stabil, ohne Absturz).</div>
     </div>
 
-    <div class="card keypadCard">
-      <div class="keypadTop">
-        <div>
-          <div class="pill">Eingabe-Panel (einmal)</div>
-          <div style="font-weight:950;font-size:18px;margin-top:6px">
+    <!-- Eingabe-Panel -->
+    <div id="keypadCard" class="card keypadCard">
+      <div class="panelHeader">
+        <div class="panelHeaderLeft">
+          <div class="pill">Eingabe-Panel</div>
+          <div style="font-weight:950;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
             Aktuell: <span id="currentName">—</span>
           </div>
         </div>
-        <div class="pill" id="diState">—</div>
+
+        <div class="panelHeaderRight">
+          <div class="pill" id="diState">—</div>
+          <button class="toggleBtn" id="togglePanelBtn" type="button">▾</button>
+        </div>
       </div>
 
       <div class="bigScore" id="currentScore">—</div>
 
+      <!-- Dart-Anzeige bleibt auch im eingeklappten Zustand sichtbar -->
       <div class="dartRow">
         <div class="dartBox" id="d0">—<small>&nbsp;</small></div>
         <div class="dartBox" id="d1">—<small>&nbsp;</small></div>
@@ -176,53 +233,56 @@
 
       <div id="msg" class="msg">&nbsp;</div>
 
-      <div class="modes">
-        <button class="modeBtn" id="mS">Single</button>
-        <button class="modeBtn" id="mD">Double</button>
-        <button class="modeBtn" id="mT">Triple</button>
-        <span class="pill" id="modeInfo">Modus: Single · Dart 1/3</span>
-      </div>
+      <!-- Alles darunter wird beim Collapse ausgeblendet -->
+      <div id="panelBody">
+        <div class="modes">
+          <button class="modeBtn" id="mS" type="button">Single</button>
+          <button class="modeBtn" id="mD" type="button">Double</button>
+          <button class="modeBtn" id="mT" type="button">Triple</button>
+          <span class="pill" id="modeInfo">Modus: Single · Dart 1/3</span>
+        </div>
 
-      <div class="nums" id="nums"></div>
+        <div class="nums" id="nums"></div>
 
-      <div class="specials">
-        <button id="b25">25</button>
-        <button id="bBull">BULL</button>
-        <button id="bMiss">MISS</button>
-      </div>
+        <div class="specials">
+          <button id="b25" type="button">25</button>
+          <button id="bBull" type="button">BULL</button>
+          <button id="bMiss" type="button">MISS</button>
+        </div>
 
-      <div class="actions">
-        <button class="tiny" id="undoDartBtn">← Dart zurück</button>
-        <button class="tiny" id="clearBtn">C</button>
-        <button id="okBtn">OK</button>
-      </div>
+        <div class="actions">
+          <button class="tiny" id="undoDartBtn" type="button">← Dart zurück</button>
+          <button class="tiny" id="clearBtn" type="button">C</button>
+          <button id="okBtn" type="button">OK</button>
+        </div>
 
-      <div class="hint">
-        Modus wählen → Zahl klicken. <b>Nach jeder Eingabe zurück auf Single</b>.
+        <div class="hint">
+          Modus wählen → Zahl klicken. <b>Nach jeder Eingabe zurück auf Single</b>.
+        </div>
       </div>
     </div>
   </div>
 
   <div class="hint" style="padding:0 6px 14px">
-    Hinweis: Auf dem Handy ist das Keypad unten fix. Durch den extra Abstand unten wird nichts verdeckt.
+    Mobile: Panel bleibt vorne. Mit ▾/▴ kannst du einklappen/ausklappen, damit du Übersicht UND Eingabe sauber siehst.
   </div>
 </div>
 
 <script>
 const $ = (id)=>document.getElementById(id);
 
-// sichere Kopie (ohne externe Lib)
+/* ========= Safe clone ========= */
 function clone(obj){
-  // structuredClone ist ideal (Android Chrome neu genug: meistens ja)
   if (typeof structuredClone === "function") return structuredClone(obj);
   return JSON.parse(JSON.stringify(obj));
 }
 
+/* ========= State ========= */
 let state = {
   startScore: 301,
   playerCount: 2,
   doubleIn: false,
-  outMode: "straight",   // OUT AUS = straight, OUT AN = double
+  outMode: "straight",  // OUT AUS = straight, OUT AN = double
   autoOk: true,
 
   players: [],
@@ -233,7 +293,7 @@ let state = {
   dartIdx: 0,
 
   banner: "",
-  history: [] // <-- bleibt leer im Snapshot!
+  history: [] // snapshots only, no recursion
 };
 
 function newPlayer(name){
@@ -247,11 +307,7 @@ function newPlayer(name){
   };
 }
 
-/* =========================
-   ✅ FIX: History speichersicher
-   - Snapshots enthalten NICHT state.history
-   - History-Limit kleiner halten
-========================= */
+/* ========= Undo (stabil, ohne history-in-history) ========= */
 const HISTORY_LIMIT = 120;
 
 function snapshot(){
@@ -303,6 +359,40 @@ function undo(){
   renderAll();
 }
 
+/* ========= Panel collapse/expand ========= */
+let panelCollapsed = false;
+
+function applyPanelState(){
+  const card = $("keypadCard");
+  const btn = $("togglePanelBtn");
+  const body = $("panelBody");
+
+  const isMobile = window.matchMedia("(max-width: 980px)").matches;
+
+  // Auf Desktop: nicht erzwingen, aber erlauben (Body ausblenden)
+  card.classList.toggle("collapsed", isMobile && panelCollapsed);
+
+  // Panel-Body: auf Mobile bei collapse ausblenden; auf Desktop optional auch ausblenden
+  if (isMobile) {
+    body.style.display = panelCollapsed ? "none" : "block";
+  } else {
+    body.style.display = panelCollapsed ? "none" : "block";
+  }
+
+  btn.textContent = panelCollapsed ? "▴" : "▾";
+
+  // Platz unter der Seite je nach Panel-Höhe
+  const space = panelCollapsed ? "170px" : "420px";
+  document.documentElement.style.setProperty("--panelSpace", space);
+}
+
+function togglePanel(){
+  panelCollapsed = !panelCollapsed;
+  try{ localStorage.setItem("darts_panel_collapsed", panelCollapsed ? "1" : "0"); }catch(e){}
+  applyPanelState();
+}
+
+/* ========= Game ========= */
 function resetTurn(){
   state.mode="S";
   state.darts=[null,null,null];
@@ -328,7 +418,7 @@ function startGame(){
 
   state.current=0;
   state.banner="";
-  state.history=[]; // Reset history on new game
+  state.history=[];
   resetTurn();
   renderAll();
 }
@@ -365,7 +455,6 @@ function pushDart(obj){
   if(state.dartIdx>2) return;
 
   saveState();
-
   state.darts[state.dartIdx]=obj;
   state.dartIdx++;
 
@@ -384,10 +473,8 @@ function pushDart(obj){
 function pickNumber(n){
   let mult = state.mode;
   let points=n, isDouble=false, isTriple=false, label=`S${n}`;
-
   if(mult==="D"){ points=2*n; isDouble=true; label=`D${n}`; }
   if(mult==="T"){ points=3*n; isTriple=true; label=`T${n}`; }
-
   pushDart({label, points, isDouble, isTriple, raw:{type:"number", n, mult}});
 }
 
@@ -460,6 +547,7 @@ function submitTurn(){
   const total = effective[0].points + effective[1].points + effective[2].points;
   const newScore = p.score - total;
 
+  // Bust
   if(newScore < 0 || (state.outMode==="double" && newScore===1)){
     p.msg="BUST";
     updateStats(p, 0);
@@ -468,6 +556,7 @@ function submitTurn(){
     return;
   }
 
+  // Checkout
   if(newScore===0){
     if(state.outMode==="double"){
       const last = effective[2];
@@ -494,6 +583,7 @@ function submitTurn(){
     return;
   }
 
+  // Normal
   p.score=newScore;
   p.msg = total>0 ? `−${total}` : "";
   updateStats(p, total);
@@ -502,6 +592,7 @@ function submitTurn(){
   renderAll();
 }
 
+/* ========= Render ========= */
 function renderAll(){
   renderBanner();
   renderRulesPill();
@@ -510,6 +601,7 @@ function renderAll(){
   renderKeypad();
   renderModeButtons();
   renderKeypadHeader();
+  applyPanelState();
 }
 
 function renderBanner(){
@@ -561,14 +653,17 @@ function renderNameEdit(){
     inp.type="text";
     inp.value = p.name.startsWith("Spieler ") ? "" : p.name;
     inp.placeholder = p.name;
+
     inp.addEventListener("input", ()=>{
-      // Namen ändern soll nicht bei jedem Keypress saveState spammen:
       p.name = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
       renderPlayerList();
       renderKeypadHeader();
       if(state.banner) renderBanner();
     });
+
+    // erst beim Verlassen speichern, nicht bei jedem Zeichen
     inp.addEventListener("blur", ()=> saveState());
+
     wrap.appendChild(inp);
   });
 }
@@ -618,7 +713,12 @@ function renderKeypad(){
   }
 
   const disable = !ensureActive();
-  document.querySelectorAll(".keypadCard button").forEach(btn=> btn.disabled = disable);
+  // nur Buttons im Panel sperren, wenn Spieler gewonnen hat
+  document.querySelectorAll("#keypadCard button").forEach(btn=>{
+    // toggle soll immer gehen
+    if (btn.id === "togglePanelBtn") return;
+    btn.disabled = disable;
+  });
 }
 
 function renderModeButtons(){
@@ -636,10 +736,12 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
-/* Wire up */
+/* ========= Wire up ========= */
 $("startBtn").addEventListener("click", startGame);
 $("randomStartBtn").addEventListener("click", randomStart);
 $("undoBtn").addEventListener("click", undo);
+
+$("togglePanelBtn").addEventListener("click", togglePanel);
 
 $("mS").addEventListener("click", ()=>setMode("S"));
 $("mD").addEventListener("click", ()=>setMode("D"));
@@ -660,14 +762,26 @@ $("autoOk").addEventListener("change", ()=>{
   renderRulesPill();
 });
 
-// defaults (falls Browser cached)
+// Defaults (falls Browser cached)
 $("startScore").value = "301";
 $("playerCount").value = "2";
 $("doubleIn").value = "false";
 $("outMode").value = "straight";
 $("autoOk").value = "true";
 
+// Panel-State aus LocalStorage
+try{
+  panelCollapsed = localStorage.getItem("darts_panel_collapsed") === "1";
+}catch(e){
+  panelCollapsed = false;
+}
+
+// Re-apply panel layout on resize/orientation
+window.addEventListener("resize", applyPanelState);
+
+// Start
 startGame();
+applyPanelState();
 </script>
 
 </body>
