@@ -23,23 +23,14 @@
   }
   button:disabled{opacity:.45;cursor:default}
   select{padding:9px 10px}
+
   .wrap{max-width:1200px;margin:0 auto;padding:14px}
-
-  /* Layout: scoreboard + keypad */
-  .layout{
-    display:grid;
-    grid-template-columns: 1fr 520px;
-    gap:12px;
-    align-items:start;
-  }
-
   .card{
     background:var(--card);
     border:1px solid var(--line);
     border-radius:16px;
     padding:12px;
   }
-
   .banner{display:none;margin-bottom:12px}
   .banner.show{display:block}
   .banner b{font-weight:800}
@@ -48,8 +39,16 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
+  /* Layout: scoreboard + keypad (Desktop) */
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr 520px;
+    gap:12px;
+    align-items:start;
+  }
+
   /* Scoreboard list */
-  .playerList{display:flex;flex-direction:column;gap:8px}
+  .playerList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   .playerItem{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:10px 10px;border:1px solid var(--line);border-radius:14px;background:#101016;
@@ -59,6 +58,8 @@
   .pName{font-weight:800}
   .pMeta{color:var(--muted);font-size:12px;margin-top:2px}
   .pScore{font-size:28px;font-weight:900;min-width:70px;text-align:right}
+
+  /* Namen (oben!) */
   .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .nameEdit input{width:180px;text-align:left}
 
@@ -88,14 +89,22 @@
   .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 
-  /* Mobile: keypad sticky bottom, scoreboard above */
+  /* Mobile fix: keypad fixed bottom + page bottom padding so nothing is hidden */
   @media (max-width: 980px){
     .layout{grid-template-columns: 1fr}
+    .wrap{
+      /* WICHTIG: Platz für das fixe Keypad unten */
+      padding-bottom: calc(520px + env(safe-area-inset-bottom, 0px));
+    }
     .keypadCard{
-      position:sticky;
-      bottom:0;
-      z-index:10;
-      box-shadow:0 -10px 30px rgba(0,0,0,.35);
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 50;
+      box-shadow: 0 -10px 30px rgba(0,0,0,.35);
+      max-height: 520px;
+      overflow: auto;
     }
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
@@ -149,24 +158,32 @@
 <div class="wrap">
   <div id="banner" class="card banner"></div>
 
+  <!-- Namen jetzt OBEN, damit sie nie hinter dem Panel liegen -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="row">
+      <div class="rowLeft">
+        <div style="font-weight:900">Spielernamen</div>
+        <span class="pill">jederzeit änderbar</span>
+      </div>
+      <span id="rulesPill" class="pill"></span>
+    </div>
+    <div id="nameEdit" class="nameEdit"></div>
+    <div class="hint">Tipp: Name leer = Standardname („Spieler X“).</div>
+  </div>
+
   <div class="layout">
     <!-- Scoreboard -->
     <div class="card">
       <div class="row">
         <div class="rowLeft">
           <div style="font-weight:900">Übersicht</div>
-          <span id="rulesPill" class="pill"></span>
+          <span class="pill">Aktiver Spieler ist markiert</span>
         </div>
-        <div class="pill">Aktiver Spieler ist markiert</div>
+        <span class="pill">Scores live</span>
       </div>
 
-      <div id="playerList" class="playerList" style="margin-top:10px"></div>
-
-      <div class="hint">
-        Namen: unten ändern. Undo funktioniert auch nach OK & Spielerwechsel.
-      </div>
-
-      <div id="nameEdit" class="nameEdit"></div>
+      <div id="playerList" class="playerList"></div>
+      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel.</div>
     </div>
 
     <!-- Single Keypad -->
@@ -213,16 +230,17 @@
       </div>
 
       <div class="hint">
-        Bedienung: Modus wählen → Zahl klicken. <b>Nach jeder Eingabe springt Modus automatisch auf Single</b>.
+        Modus wählen → Zahl klicken. <b>Nach jeder Eingabe zurück auf Single</b>.
       </div>
     </div>
+  </div>
+
+  <div class="hint" style="padding:0 6px 14px">
+    Hinweis: Auf dem Handy ist das Keypad unten fix. Durch den extra Abstand unten wird nichts mehr verdeckt.
   </div>
 </div>
 
 <script>
-/* =========================
-   State
-========================= */
 const $ = (id)=>document.getElementById(id);
 const deepCopy = (x)=>JSON.parse(JSON.stringify(x));
 
@@ -236,7 +254,7 @@ let state = {
   players: [],
   current: 0,
 
-  mode: "S",          // S D T (resets to S after each dart)
+  mode: "S",
   darts: [null,null,null],
   dartIdx: 0,
 
@@ -278,9 +296,6 @@ function ensureActive(){
   return p && !p.won;
 }
 
-/* =========================
-   Init / Controls
-========================= */
 function startGame(){
   state.startScore = parseInt($("startScore").value,10);
   state.playerCount = parseInt($("playerCount").value,10);
@@ -318,15 +333,12 @@ function syncControlsFromState(){
   $("autoOk").value = String(state.autoOk);
 }
 
-/* =========================
-   Input logic
-========================= */
 function setMode(m){
   if(!ensureActive()) return;
   saveState();
   state.mode = m;
-  renderKeypadHeader();
   renderModeButtons();
+  renderKeypadHeader();
 }
 
 function pushDart(obj){
@@ -338,11 +350,12 @@ function pushDart(obj){
   state.darts[state.dartIdx]=obj;
   state.dartIdx++;
 
-  // ✅ After each input => back to Single
+  // nach jeder Eingabe zurück auf Single
   state.mode="S";
 
   renderKeypad();
   renderModeButtons();
+  renderKeypadHeader();
 
   if(state.autoOk && state.dartIdx===3){
     setTimeout(()=>{ if(state.dartIdx===3) submitTurn(); }, 120);
@@ -372,6 +385,7 @@ function undoDart(){
   state.dartIdx--;
   state.darts[state.dartIdx]=null;
   renderKeypad();
+  renderKeypadHeader();
 }
 
 function clearTurn(){
@@ -380,6 +394,7 @@ function clearTurn(){
   resetTurn();
   renderKeypad();
   renderModeButtons();
+  renderKeypadHeader();
 }
 
 function nextPlayer(){
@@ -409,7 +424,6 @@ function submitTurn(){
   const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}}));
   let effective = deepCopy(turn);
 
-  // Double-In
   if(!p.opened && state.doubleIn){
     const idx = effective.findIndex(d=>d.isDouble && d.points>0);
     if(idx===-1){
@@ -426,7 +440,6 @@ function submitTurn(){
   const total = effective[0].points + effective[1].points + effective[2].points;
   const newScore = p.score - total;
 
-  // Bust rules
   if(newScore < 0 || (state.outMode!=="straight" && newScore===1)){
     p.msg="BUST";
     updateStats(p, 0);
@@ -435,7 +448,6 @@ function submitTurn(){
     return;
   }
 
-  // Checkout
   if(newScore===0){
     const last = effective[2];
 
@@ -468,7 +480,6 @@ function submitTurn(){
     return;
   }
 
-  // Normal
   p.score=newScore;
   p.msg = total>0 ? `−${total}` : "";
   updateStats(p, total);
@@ -477,14 +488,11 @@ function submitTurn(){
   renderAll();
 }
 
-/* =========================
-   Render
-========================= */
 function renderAll(){
   renderBanner();
   renderRulesPill();
-  renderPlayerList();
   renderNameEdit();
+  renderPlayerList();
   renderKeypad();
   renderModeButtons();
   renderKeypadHeader();
@@ -555,6 +563,8 @@ function renderKeypadHeader(){
 
   const di = state.doubleIn ? (p.opened ? "DI: open" : "DI: closed") : "DI: aus";
   $("diState").textContent = `${di} · Out: ${state.outMode}`;
+
+  $("modeInfo").textContent = `Modus: ${state.mode==="S"?"Single":state.mode==="D"?"Double":"Triple"} · Dart ${Math.min(state.dartIdx+1,3)}/3`;
 }
 
 function renderKeypad(){
@@ -570,16 +580,13 @@ function renderKeypad(){
   box($("d1"), d(1));
   box($("d2"), d(2));
 
-  // message for current player
   const msg = $("msg");
   const m = p?.msg || "";
   msg.className = "msg";
   if(m.includes("WIN")) msg.classList.add("ok");
   if(m.includes("BUST")) msg.classList.add("bad");
   msg.textContent = m ? m : " ";
-  $("modeInfo").textContent = `Modus: ${state.mode==="S"?"Single":state.mode==="D"?"Double":"Triple"} · Dart ${Math.min(state.dartIdx+1,3)}/3`;
 
-  // build number buttons once (if empty)
   const nums = $("nums");
   if(!nums.dataset.built){
     nums.dataset.built="1";
@@ -591,15 +598,8 @@ function renderKeypad(){
     }
   }
 
-  // disable keypad if current player already won
   const disable = !ensureActive();
-  const allButtons = document.querySelectorAll(".keypadCard button, .keypadCard select, .keypadCard input");
-  allButtons.forEach(btn=>{
-    // keep global header buttons enabled; here only keypad area
-    btn.disabled = disable;
-  });
-
-  // But allow OK/undo/clear also disabled when won -> fine (no input)
+  document.querySelectorAll(".keypadCard button").forEach(btn=> btn.disabled = disable);
 }
 
 function renderModeButtons(){
@@ -617,9 +617,7 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
-/* =========================
-   Wire up
-========================= */
+/* Wire up */
 $("startBtn").addEventListener("click", startGame);
 $("randomStartBtn").addEventListener("click", randomStart);
 $("undoBtn").addEventListener("click", undo);
@@ -641,11 +639,6 @@ $("autoOk").addEventListener("change", ()=>{
   state.autoOk = $("autoOk").value==="true";
   renderRulesPill();
 });
-
-$("startScore").addEventListener("change", ()=>{/* only for new game */});
-$("playerCount").addEventListener("change", ()=>{/* only for new game */});
-$("doubleIn").addEventListener("change", ()=>{/* only for new game */});
-$("outMode").addEventListener("change", ()=>{/* only for new game */});
 
 startGame();
 </script>
