@@ -62,9 +62,6 @@
   .nameEdit input{width:180px;text-align:left}
 
   /* Keypad Panel */
-  .keypadTop{
-    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
-  }
   .panelHeader{
     display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
   }
@@ -101,30 +98,43 @@
   .tiny{font-size:12px;padding:8px 10px}
   .toggleBtn{background:var(--btn2)}
 
-  /* Mobile: Panel fixed bottom + einklappbar */
+  /* ✅ Mobile: garantiert oberste Ebene + einklappbar */
   @media (max-width: 980px){
     .layout{grid-template-columns: 1fr}
 
+    /* Content bewusst "unter" das Panel legen */
+    .wrap, header, .card, .layout{
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Platz für Panel unten (wird per JS mit --panelSpace gesetzt) */
     .wrap{
       padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
     }
 
+    /* PANEL: garantiert oberste Ebene */
     .keypadCard{
-      position: fixed;
+      position: fixed !important;
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 9999;
+
+      z-index: 2147483647 !important;
+
+      isolation: isolate;
+      transform: translateZ(0);
 
       border-radius: 16px 16px 0 0;
       box-shadow: 0 -12px 40px rgba(0,0,0,.45);
 
       max-height: 420px;
       overflow-y: auto;
+      background: var(--card);
     }
 
     .keypadCard.collapsed{
-      max-height: 150px; /* nur Header+Score+Darts sichtbar */
+      max-height: 150px;
       overflow: hidden;
     }
 
@@ -307,7 +317,7 @@ function newPlayer(name){
   };
 }
 
-/* ========= Undo (stabil, ohne history-in-history) ========= */
+/* ========= Undo (stabil) ========= */
 const HISTORY_LIMIT = 120;
 
 function snapshot(){
@@ -367,21 +377,10 @@ function applyPanelState(){
   const btn = $("togglePanelBtn");
   const body = $("panelBody");
 
-  const isMobile = window.matchMedia("(max-width: 980px)").matches;
-
-  // Auf Desktop: nicht erzwingen, aber erlauben (Body ausblenden)
-  card.classList.toggle("collapsed", isMobile && panelCollapsed);
-
-  // Panel-Body: auf Mobile bei collapse ausblenden; auf Desktop optional auch ausblenden
-  if (isMobile) {
-    body.style.display = panelCollapsed ? "none" : "block";
-  } else {
-    body.style.display = panelCollapsed ? "none" : "block";
-  }
-
+  card.classList.toggle("collapsed", panelCollapsed);
+  body.style.display = panelCollapsed ? "none" : "block";
   btn.textContent = panelCollapsed ? "▴" : "▾";
 
-  // Platz unter der Seite je nach Panel-Höhe
   const space = panelCollapsed ? "170px" : "420px";
   document.documentElement.style.setProperty("--panelSpace", space);
 }
@@ -458,8 +457,7 @@ function pushDart(obj){
   state.darts[state.dartIdx]=obj;
   state.dartIdx++;
 
-  // nach jeder Eingabe zurück auf Single
-  state.mode="S";
+  state.mode="S"; // reset to Single
 
   renderKeypad();
   renderModeButtons();
@@ -475,13 +473,13 @@ function pickNumber(n){
   let points=n, isDouble=false, isTriple=false, label=`S${n}`;
   if(mult==="D"){ points=2*n; isDouble=true; label=`D${n}`; }
   if(mult==="T"){ points=3*n; isTriple=true; label=`T${n}`; }
-  pushDart({label, points, isDouble, isTriple, raw:{type:"number", n, mult}});
+  pushDart({label, points, isDouble, isTriple});
 }
 
 function pickSpecial(type){
-  if(type==="MISS") return pushDart({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}});
-  if(type==="25")   return pushDart({label:"25", points:25, isDouble:false, isTriple:false, raw:{type:"25"}});
-  if(type==="BULL") return pushDart({label:"BULL", points:50, isDouble:true, isTriple:false, raw:{type:"bull"}});
+  if(type==="MISS") return pushDart({label:"0", points:0, isDouble:false, isTriple:false});
+  if(type==="25")   return pushDart({label:"25", points:25, isDouble:false, isTriple:false});
+  if(type==="BULL") return pushDart({label:"BULL", points:50, isDouble:true, isTriple:false});
 }
 
 function undoDart(){
@@ -527,7 +525,7 @@ function submitTurn(){
   const p = state.players[state.current];
   p.msg="";
 
-  const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}}));
+  const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
   const effective = clone(turn);
 
   // IN (Double-In)
@@ -541,13 +539,12 @@ function submitTurn(){
       return;
     }
     p.opened=true;
-    for(let k=0;k<idx;k++) effective[k]={label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}};
+    for(let k=0;k<idx;k++) effective[k]={label:"0", points:0, isDouble:false, isTriple:false};
   }
 
   const total = effective[0].points + effective[1].points + effective[2].points;
   const newScore = p.score - total;
 
-  // Bust
   if(newScore < 0 || (state.outMode==="double" && newScore===1)){
     p.msg="BUST";
     updateStats(p, 0);
@@ -556,7 +553,6 @@ function submitTurn(){
     return;
   }
 
-  // Checkout
   if(newScore===0){
     if(state.outMode==="double"){
       const last = effective[2];
@@ -583,7 +579,6 @@ function submitTurn(){
     return;
   }
 
-  // Normal
   p.score=newScore;
   p.msg = total>0 ? `−${total}` : "";
   updateStats(p, total);
@@ -661,9 +656,7 @@ function renderNameEdit(){
       if(state.banner) renderBanner();
     });
 
-    // erst beim Verlassen speichern, nicht bei jedem Zeichen
     inp.addEventListener("blur", ()=> saveState());
-
     wrap.appendChild(inp);
   });
 }
@@ -713,10 +706,8 @@ function renderKeypad(){
   }
 
   const disable = !ensureActive();
-  // nur Buttons im Panel sperren, wenn Spieler gewonnen hat
   document.querySelectorAll("#keypadCard button").forEach(btn=>{
-    // toggle soll immer gehen
-    if (btn.id === "togglePanelBtn") return;
+    if (btn.id === "togglePanelBtn") return; // toggle immer erlaubt
     btn.disabled = disable;
   });
 }
@@ -755,7 +746,7 @@ $("undoDartBtn").addEventListener("click", undoDart);
 $("clearBtn").addEventListener("click", clearTurn);
 $("okBtn").addEventListener("click", submitTurn);
 
-// Auto-OK live umschaltbar (ohne Neustart)
+// Auto-OK live umschaltbar
 $("autoOk").addEventListener("change", ()=>{
   saveState();
   state.autoOk = $("autoOk").value==="true";
@@ -776,7 +767,6 @@ try{
   panelCollapsed = false;
 }
 
-// Re-apply panel layout on resize/orientation
 window.addEventListener("resize", applyPanelState);
 
 // Start
