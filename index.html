@@ -8,6 +8,12 @@
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
     --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
+
+    /* functional button feel */
+    --btn-border:#2f2f3a;
+    --btn-hover:#1a1a22;
+    --btn-press:#242432;
+    --btn-glow:rgba(255,255,255,0.08);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -22,7 +28,21 @@
     padding:10px 14px;font-size:16px;border-radius:12px;border:1px solid var(--line);
     background:var(--btn);color:var(--text);
   }
-  button{cursor:pointer}
+  button{
+    cursor:pointer;
+    border:1px solid var(--btn-border);
+    transition:all .12s ease;
+    box-shadow:0 0 0 1px transparent;
+  }
+  button:hover{
+    background:var(--btn-hover);
+    border-color:#3a3a48;
+  }
+  button:active{
+    background:var(--btn-press);
+    transform:scale(0.97);
+    box-shadow:0 0 0 2px var(--btn-glow) inset;
+  }
   button:disabled{opacity:.45;cursor:default}
   .wrap{max-width:1100px;margin:0 auto;padding:14px}
   .grid{display:grid;gap:12px}
@@ -70,19 +90,20 @@
   .modeBtn{background:var(--btn2)}
   .modeBtn.active{outline:2px solid var(--accent)}
 
-  .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
-  .nums button{padding:12px 0}
-  .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .nums{display:grid;gap:12px;grid-template-columns:repeat(5,1fr);max-width:560px;margin:0 auto 10px}
+  /* minimal größer */
+  .nums button{padding:16px 0;font-size:20px;border-radius:16px}
+  .specials{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .specials button{padding:14px 18px;font-size:18px;border-radius:16px}
 
   /* Bottom actions: only Undo + OK */
-  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
-  .actions button{min-width:140px}
+  .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .actions button{min-width:160px;padding:14px 18px;font-size:18px;border-radius:16px}
   .hidden{display:none !important;}
 
   @media (max-width: 980px){
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
-    .actions button{min-width:140px}
   }
 </style>
 </head>
@@ -90,7 +111,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 I</span>
+  <span class="ver">Build: 2026-02-17 J</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -108,6 +129,7 @@
       </div>
 
       <div class="controls2">
+
         <!-- Zeile 1: Start + Spieler -->
         <div class="controlsLine">
           <div class="controlsGroup">
@@ -163,6 +185,7 @@
             <button id="startGameBtn">Spiel starten</button>
           </div>
         </div>
+
       </div>
 
       <div style="margin-top:12px;font-weight:900">Spielernamen</div>
@@ -448,20 +471,17 @@
     renderHeader();
   }
 
-  // ===== LIVE Remaining (DI/OUT berücksichtigt) =====
+  // ===== LIVE Remaining (DI berücksichtigt) =====
   function computeEffectiveDartsForCurrent(){
     const p = game.players[game.current];
     const filled = game.darts.map(d => d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
     const effective = clone(filled);
 
     if(setup.doubleIn && !p.opened){
-      // zählt erst ab dem ersten Double, das wirklich "öffnet"
       const idx = effective.findIndex(d=>d.isDouble && d.points>0);
       if(idx === -1){
-        // noch nicht geöffnet: alles zählt 0
         for(let k=0;k<3;k++) effective[k] = {label:"0", points:0, isDouble:false, isTriple:false};
       } else {
-        // geöffnet: alles davor zählt 0
         for(let k=0;k<idx;k++) effective[k] = {label:"0", points:0, isDouble:false, isTriple:false};
       }
     }
@@ -485,7 +505,7 @@
     const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
     const remaining = p.score - subtotal;
 
-    // BUST sofort beenden
+    // Bust sofort
     if(remaining < 0 || (setup.outMode==="double" && remaining === 1)){
       p.msg = "BUST";
       nextPlayer();
@@ -493,10 +513,9 @@
       return;
     }
 
-    // Checkout sofort beenden (auch nach Dart 1/2 möglich)
+    // Checkout sofort
     if(remaining === 0){
       if(setup.outMode === "double"){
-        // letzter geworfener Dart muss Double sein (BULL zählt als Double)
         const lastIdx = Math.max(0, game.dartIdx - 1);
         const last = effective[lastIdx];
         if(!(last && last.isDouble && last.points>0)){
@@ -506,7 +525,6 @@
           return;
         }
       }
-      // IN muss in dem Turn ggf. geöffnet werden
       if(setup.doubleIn && !p.opened){
         const idx = effective.findIndex(d=>d.isDouble && d.points>0);
         if(idx !== -1) p.opened = true;
@@ -520,7 +538,6 @@
       return;
     }
 
-    // nichts final – nur live Anzeige aktualisieren
     renderHeader();
     renderInput();
   }
@@ -533,17 +550,17 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    // immer zurück auf Single
+    // always reset to single
     game.mode = "S";
 
     renderInput();
     renderMode();
     renderHeader();
 
-    // LIVE Prüfung nach jedem Pfeil (Bust/Win sofort)
+    // Live evaluation
     evaluateAfterEachDart();
 
-    // wenn nach evaluate noch im selben Turn und 3 Darts voll:
+    // Auto-OK if still same turn
     if(ensureActive() && game.dartIdx===3){
       if(setup.autoOk){
         setTimeout(()=>{ if(ensureActive() && game.dartIdx===3) submitTurn(); }, 120);
@@ -647,10 +664,7 @@
   function renderHeader(){
     const p = game.players[game.current];
     $("currentName").textContent = p ? p.name : "—";
-
-    // LIVE Remaining anzeigen:
-    const live = p ? getLiveRemaining() : "—";
-    $("currentScore").textContent = live;
+    $("currentScore").textContent = p ? getLiveRemaining() : "—";
 
     const inTxt = setup.doubleIn ? (p.opened ? "IN: open" : "IN: closed") : "IN: aus";
     const outTxt = (setup.outMode==="double") ? "OUT: double" : "OUT: straight";
