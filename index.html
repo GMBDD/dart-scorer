@@ -10,10 +10,9 @@
   --bg:#0f0f12;
   --card:#17171c;
   --text:#f2f2f2;
-  --muted:#a7a7b0;
   --line:#2a2a33;
   --accent:#3a3a44;
-  --panelSpace:420px;
+  --panelHeight:420px;
 }
 
 *{box-sizing:border-box}
@@ -25,34 +24,38 @@ body{
   color:var(--text);
 }
 
+/* ===== SCROLLBEREICH ===== */
+#app{
+  min-height:100vh;
+  padding-bottom:calc(var(--panelHeight) + env(safe-area-inset-bottom));
+}
+
 header{
   position:sticky;
   top:0;
-  z-index:10;
   background:var(--bg);
+  z-index:5;
   border-bottom:1px solid var(--line);
   padding:12px;
   display:flex;
   flex-wrap:wrap;
   gap:10px;
   justify-content:center;
-  align-items:center;
 }
 
-button,select,input{
+button,select{
   padding:10px 14px;
-  font-size:16px;
   border-radius:12px;
   border:1px solid var(--line);
   background:#121218;
   color:var(--text);
+  font-size:16px;
 }
 
 .wrap{
   max-width:1000px;
   margin:auto;
   padding:14px;
-  padding-bottom:calc(var(--panelSpace) + env(safe-area-inset-bottom));
 }
 
 .card{
@@ -76,12 +79,19 @@ button,select,input{
   outline:2px solid var(--accent);
 }
 
-#panel{
+/* ===== PANEL ROOT ===== */
+#panelRoot{
   position:fixed;
-  bottom:0;
   left:0;
   right:0;
-  z-index:99999;
+  bottom:0;
+  z-index:2147483647;
+
+  transform:translateZ(0);
+  will-change:transform;
+  isolation:isolate;
+
+  padding-bottom:env(safe-area-inset-bottom);
 }
 
 .panelInner{
@@ -94,10 +104,11 @@ button,select,input{
   background:var(--card);
   border:1px solid var(--line);
   border-radius:16px 16px 0 0;
+  box-shadow:0 -10px 30px rgba(0,0,0,0.6);
   padding:12px;
+
   max-height:420px;
   overflow:auto;
-  box-shadow:0 -10px 30px rgba(0,0,0,0.5);
 }
 
 .panelCard.collapsed{
@@ -109,13 +120,6 @@ button,select,input{
   font-size:42px;
   text-align:center;
   font-weight:bold;
-}
-
-.nums{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:8px;
-  margin-top:10px;
 }
 
 .dartRow{
@@ -133,22 +137,31 @@ button,select,input{
   text-align:center;
 }
 
+.nums{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin-top:10px;
+}
+
 .mode button.active{
   outline:2px solid var(--accent);
 }
 
 .version{
   font-size:12px;
-  color:var(--muted);
+  opacity:0.7;
 }
 </style>
 </head>
 
 <body>
 
+<div id="app">
+
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="version">Build: 2026-02-17 A</span>
+  <span class="version">Build: 2026-02-17 B</span>
 
   <span>Start:</span>
   <select id="startScore">
@@ -170,13 +183,18 @@ button,select,input{
 
 <div class="wrap">
   <div class="card">
-    <div><b>Spieler</b></div>
+    <b>Spieler</b>
     <div id="players"></div>
   </div>
 </div>
 
-<div id="panel">
+</div>
+
+
+<!-- ===== FIXED PANEL ===== -->
+<div id="panelRoot">
   <div class="panelInner">
+
     <div id="panelCard" class="panelCard">
 
       <div style="display:flex;justify-content:space-between">
@@ -205,8 +223,10 @@ button,select,input{
       </div>
 
     </div>
+
   </div>
 </div>
+
 
 <script>
 let players=[];
@@ -233,16 +253,16 @@ function startGame(){
 }
 
 function render(){
-  playersDiv="";
+  let html="";
   players.forEach((p,i)=>{
-    playersDiv+=`
+    html+=`
       <div class="player ${i===current?'active':''}">
         <div>${p.name}</div>
         <div>${p.score}</div>
       </div>`;
   });
-  document.getElementById("players").innerHTML=playersDiv;
 
+  document.getElementById("players").innerHTML=html;
   document.getElementById("currentName").textContent=players[current].name;
   document.getElementById("score").textContent=players[current].score;
 
@@ -257,9 +277,11 @@ function setMode(m){
 
 function pick(n){
   if(idx>2)return;
+
   let val=n;
   if(mode==="D")val*=2;
   if(mode==="T")val*=3;
+
   darts[idx]=val;
   idx++;
   render();
@@ -267,17 +289,20 @@ function pick(n){
 
 function submit(){
   history.push(JSON.stringify({players,current}));
+
   const sum=darts.reduce((a,b)=>a+(b||0),0);
   players[current].score-=sum;
 
   current=(current+1)%players.length;
   darts=[null,null,null];
   idx=0;
+
   render();
 }
 
 function undo(){
   if(!history.length)return;
+
   const last=JSON.parse(history.pop());
   players=last.players;
   current=last.current;
