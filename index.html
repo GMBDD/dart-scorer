@@ -90,7 +90,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 H</span>
+  <span class="ver">Build: 2026-02-17 I</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -108,7 +108,6 @@
       </div>
 
       <div class="controls2">
-
         <!-- Zeile 1: Start + Spieler -->
         <div class="controlsLine">
           <div class="controlsGroup">
@@ -164,15 +163,12 @@
             <button id="startGameBtn">Spiel starten</button>
           </div>
         </div>
-
       </div>
 
       <div style="margin-top:12px;font-weight:900">Spielernamen</div>
       <div id="nameInputs" class="names"></div>
 
-      <div class="hint">
-        Setup → „Spiel starten“. Danach Scoring-Screen ohne Overlap.
-      </div>
+      <div class="hint">Setup → „Spiel starten“. Danach Scoring-Screen ohne Overlap.</div>
     </div>
   </div>
 </section>
@@ -206,6 +202,7 @@
         </div>
       </div>
 
+      <!-- LIVE Remaining -->
       <div class="bigScore" id="currentScore">—</div>
 
       <div class="dartRow">
@@ -231,7 +228,6 @@
         <button id="bMiss" type="button">MISS</button>
       </div>
 
-      <!-- Bottom actions: Undo moved here, C removed, Dart zurück removed -->
       <div class="actions">
         <button id="undoBtn" type="button">⬅ Undo</button>
         <button id="okBtn" type="button">OK</button>
@@ -272,7 +268,7 @@
     history: []
   };
 
-  const HISTORY_LIMIT = 150;
+  const HISTORY_LIMIT = 200;
 
   function getDefaultName(i){ return `Spieler ${i+1}`; }
   function getStarterName(){
@@ -452,6 +448,83 @@
     renderHeader();
   }
 
+  // ===== LIVE Remaining (DI/OUT berücksichtigt) =====
+  function computeEffectiveDartsForCurrent(){
+    const p = game.players[game.current];
+    const filled = game.darts.map(d => d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
+    const effective = clone(filled);
+
+    if(setup.doubleIn && !p.opened){
+      // zählt erst ab dem ersten Double, das wirklich "öffnet"
+      const idx = effective.findIndex(d=>d.isDouble && d.points>0);
+      if(idx === -1){
+        // noch nicht geöffnet: alles zählt 0
+        for(let k=0;k<3;k++) effective[k] = {label:"0", points:0, isDouble:false, isTriple:false};
+      } else {
+        // geöffnet: alles davor zählt 0
+        for(let k=0;k<idx;k++) effective[k] = {label:"0", points:0, isDouble:false, isTriple:false};
+      }
+    }
+    return effective;
+  }
+
+  function getLiveRemaining(){
+    const p = game.players[game.current];
+    if(!p) return setup.startScore;
+
+    const effective = computeEffectiveDartsForCurrent();
+    const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
+    return p.score - subtotal;
+  }
+
+  function evaluateAfterEachDart(){
+    const p = game.players[game.current];
+    if(!p || p.won) return;
+
+    const effective = computeEffectiveDartsForCurrent();
+    const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
+    const remaining = p.score - subtotal;
+
+    // BUST sofort beenden
+    if(remaining < 0 || (setup.outMode==="double" && remaining === 1)){
+      p.msg = "BUST";
+      nextPlayer();
+      renderAll();
+      return;
+    }
+
+    // Checkout sofort beenden (auch nach Dart 1/2 möglich)
+    if(remaining === 0){
+      if(setup.outMode === "double"){
+        // letzter geworfener Dart muss Double sein (BULL zählt als Double)
+        const lastIdx = Math.max(0, game.dartIdx - 1);
+        const last = effective[lastIdx];
+        if(!(last && last.isDouble && last.points>0)){
+          p.msg = "BUST (kein Double-Out)";
+          nextPlayer();
+          renderAll();
+          return;
+        }
+      }
+      // IN muss in dem Turn ggf. geöffnet werden
+      if(setup.doubleIn && !p.opened){
+        const idx = effective.findIndex(d=>d.isDouble && d.points>0);
+        if(idx !== -1) p.opened = true;
+      }
+
+      p.score = 0;
+      p.won = true;
+      p.msg = "WIN ✅";
+      nextPlayer();
+      renderAll();
+      return;
+    }
+
+    // nichts final – nur live Anzeige aktualisieren
+    renderHeader();
+    renderInput();
+  }
+
   function pushDart(obj){
     if(!ensureActive()) return;
     if(game.dartIdx>2) return;
@@ -460,14 +533,21 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    game.mode = "S"; // always reset to single
+    // immer zurück auf Single
+    game.mode = "S";
 
     renderInput();
     renderMode();
     renderHeader();
 
-    if(setup.autoOk && game.dartIdx===3){
-      setTimeout(()=>{ if(game.dartIdx===3) submitTurn(); }, 120);
+    // LIVE Prüfung nach jedem Pfeil (Bust/Win sofort)
+    evaluateAfterEachDart();
+
+    // wenn nach evaluate noch im selben Turn und 3 Darts voll:
+    if(ensureActive() && game.dartIdx===3){
+      if(setup.autoOk){
+        setTimeout(()=>{ if(ensureActive() && game.dartIdx===3) submitTurn(); }, 120);
+      }
     }
   }
 
@@ -491,8 +571,8 @@
     const p = game.players[game.current];
     p.msg="";
 
-    const turn = game.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
-    const effective = clone(turn);
+    const filled = game.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
+    const effective = clone(filled);
 
     if(setup.doubleIn && !p.opened){
       const idx = effective.findIndex(d=>d.isDouble && d.points>0);
@@ -567,7 +647,11 @@
   function renderHeader(){
     const p = game.players[game.current];
     $("currentName").textContent = p ? p.name : "—";
-    $("currentScore").textContent = p ? p.score : "—";
+
+    // LIVE Remaining anzeigen:
+    const live = p ? getLiveRemaining() : "—";
+    $("currentScore").textContent = live;
+
     const inTxt = setup.doubleIn ? (p.opened ? "IN: open" : "IN: closed") : "IN: aus";
     const outTxt = (setup.outMode==="double") ? "OUT: double" : "OUT: straight";
     $("diState").textContent = `${inTxt} · ${outTxt}`;
@@ -613,7 +697,6 @@
     renderMode();
   }
 
-  // bottom Undo + OK
   $("undoBtn").addEventListener("click", undo);
   $("okBtn").addEventListener("click", submitTurn);
 
