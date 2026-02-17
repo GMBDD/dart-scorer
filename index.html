@@ -36,7 +36,6 @@
   .controls2{display:flex;flex-direction:column;gap:10px;margin-top:10px}
   .controlsLine{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
   .controlsGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-
   .names{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .names input{width:180px;text-align:left}
 
@@ -74,22 +73,24 @@
   .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
   .nums button{padding:12px 0}
   .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-  .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .tiny{font-size:12px;padding:8px 10px}
+
+  /* Bottom actions: only Undo + OK */
+  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .actions button{min-width:140px}
+  .hidden{display:none !important;}
 
   @media (max-width: 980px){
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
+    .actions button{min-width:140px}
   }
-
-  .hidden{display:none !important;}
 </style>
 </head>
 <body>
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 G</span>
+  <span class="ver">Build: 2026-02-17 H</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -106,14 +107,9 @@
         </div>
       </div>
 
-      <!-- Wunschlayout:
-           Zeile 1: Start + Spieler
-           Zeile 2: IN + OUT
-           Zeile 3: Auto-OK
-      -->
       <div class="controls2">
 
-        <!-- Zeile 1 -->
+        <!-- Zeile 1: Start + Spieler -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>Start:</span>
@@ -132,7 +128,7 @@
           </div>
         </div>
 
-        <!-- Zeile 2 -->
+        <!-- Zeile 2: IN + OUT -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>IN:</span>
@@ -149,7 +145,7 @@
           </div>
         </div>
 
-        <!-- Zeile 3 -->
+        <!-- Zeile 3: Auto-OK -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>Auto-OK:</span>
@@ -191,7 +187,6 @@
           <span class="pill" id="rulesPill"></span>
         </div>
         <div class="rowLeft">
-          <button id="undoBtn">⬅ Undo</button>
           <button id="newBtn">Neues Spiel</button>
         </div>
       </div>
@@ -236,9 +231,9 @@
         <button id="bMiss" type="button">MISS</button>
       </div>
 
+      <!-- Bottom actions: Undo moved here, C removed, Dart zurück removed -->
       <div class="actions">
-        <button class="tiny" id="undoDartBtn" type="button">← Dart zurück</button>
-        <button class="tiny" id="clearBtn" type="button">C</button>
+        <button id="undoBtn" type="button">⬅ Undo</button>
         <button id="okBtn" type="button">OK</button>
       </div>
 
@@ -274,7 +269,6 @@
     mode: "S",
     darts: [null,null,null],
     dartIdx: 0,
-    banner: "",
     history: []
   };
 
@@ -309,8 +303,7 @@
         current: game.current,
         mode: game.mode,
         darts: clone(game.darts),
-        dartIdx: game.dartIdx,
-        banner: game.banner
+        dartIdx: game.dartIdx
       }
     };
   }
@@ -418,7 +411,6 @@
     game.mode = "S";
     game.darts = [null,null,null];
     game.dartIdx = 0;
-    game.banner = "";
     game.history = [];
     showGame();
     renderAll();
@@ -468,7 +460,7 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    game.mode = "S";
+    game.mode = "S"; // always reset to single
 
     renderInput();
     renderMode();
@@ -490,23 +482,6 @@
     if(type==="MISS") return pushDart({label:"0", points:0, isDouble:false, isTriple:false});
     if(type==="25")   return pushDart({label:"25", points:25, isDouble:false, isTriple:false});
     if(type==="BULL") return pushDart({label:"BULL", points:50, isDouble:true, isTriple:false});
-  }
-
-  function undoDart(){
-    if(!ensureActive()) return;
-    if(game.dartIdx===0) return;
-    saveState();
-    game.dartIdx--;
-    game.darts[game.dartIdx]=null;
-    renderInput();
-    renderHeader();
-  }
-
-  function clearTurn(){
-    if(!ensureActive()) return;
-    saveState();
-    resetTurn();
-    renderInput(); renderMode(); renderHeader();
   }
 
   function submitTurn(){
@@ -638,9 +613,8 @@
     renderMode();
   }
 
+  // bottom Undo + OK
   $("undoBtn").addEventListener("click", undo);
-  $("undoDartBtn").addEventListener("click", undoDart);
-  $("clearBtn").addEventListener("click", clearTurn);
   $("okBtn").addEventListener("click", submitTurn);
 
   $("mS").addEventListener("click", ()=>setMode("S"));
