@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
@@ -6,430 +6,317 @@
 <title>Darts Scoring</title>
 
 <style>
-  :root{
-    --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
-    --btn:#121218; --btn2:#1c1c24;
-  }
-  *{box-sizing:border-box}
-  body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;text-align:center}
-  header{
-    padding:12px;border-bottom:1px solid var(--line);
-    display:flex;justify-content:center;flex-wrap:wrap;gap:10px;align-items:center
-  }
-  header strong{font-size:16px}
-  button,select,input{
-    padding:10px 14px;font-size:16px;border-radius:12px;border:1px solid var(--line);
-    background:var(--btn);color:var(--text);cursor:pointer
-  }
-  button:disabled{opacity:.45;cursor:default}
-  select{padding:9px 10px}
-  .wrap{max-width:1100px;margin:0 auto;padding:14px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
-  .active{outline:2px solid #3a3a44}
-  .title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .name{font-weight:700}
-  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
-  .score{font-size:40px;font-weight:800;margin:10px 0}
-  .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
-  .err{color:#ffb3b3}
-  .startInfo{font-size:13px;color:var(--muted);margin-top:6px}
-
-  /* Dart-Display */
-  .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
-  .dartBox{
-    min-width:78px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);
-    background:#101016;font-weight:700
-  }
-  .dartBox small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
-
-  /* Keypad */
-  .pad{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
-  .pad .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-  .pad .modeBtn{background:var(--btn2)}
-  .pad .modeBtn.activeMode{outline:2px solid #3a3a44}
-  .nums{
-    display:grid;gap:8px;
-    grid-template-columns:repeat(5,minmax(48px,1fr));
-    max-width:420px;margin:0 auto 10px
-  }
-  .nums button{padding:10px 0}
-  .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-  .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .tiny{font-size:12px;padding:8px 10px}
-
-  /* Namen-Setup */
-  .nameSetup{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
-  .nameSetup input{width:160px}
+:root{
+  --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
+  --btn:#121218; --btn2:#1c1c24;
+}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;text-align:center}
+header{
+  padding:12px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:center;flex-wrap:wrap;gap:10px;align-items:center
+}
+button,select,input{
+  padding:10px 14px;font-size:16px;border-radius:12px;border:1px solid var(--line);
+  background:var(--btn);color:var(--text);cursor:pointer
+}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.active{outline:2px solid #3a3a44}
+.score{font-size:40px;font-weight:800;margin:10px 0}
+.dartRow{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.dartBox{min-width:70px;padding:8px;border:1px solid var(--line);border-radius:10px}
+.pad{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:420px;margin:0 auto}
+.specials{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
 </style>
 </head>
 
 <body>
 
 <header>
-  <strong>🎯 Darts Scoring (301)</strong>
+<strong>🎯 Darts Scoring</strong>
 
-  <span>Spieler:</span>
-  <select id="playerCount">
-    <option>1</option><option selected>2</option><option>3</option>
-    <option>4</option><option>5</option><option>6</option>
-  </select>
+<span>Spiel:</span>
+<select id="gameMode">
+<option value="301">301</option>
+<option value="501" selected>501</option>
+<option value="701">701</option>
+<option value="1001">1001</option>
+</select>
 
-  <span>Double In:</span>
-  <select id="doubleIn">
-    <option value="true" selected>AN</option>
-    <option value="false">AUS</option>
-  </select>
+<span>Spieler:</span>
+<select id="playerCount">
+<option>1</option><option selected>2</option><option>3</option>
+<option>4</option><option>5</option><option>6</option>
+</select>
 
-  <span>Out:</span>
-  <select id="outMode">
-    <option value="double" selected>Double Out</option>
-    <option value="straight">Straight Out</option>
-  </select>
+<span>DI:</span>
+<select id="doubleIn">
+<option value="true">AN</option>
+<option value="false" selected>AUS</option>
+</select>
 
-  <button id="startBtn">Neues Spiel</button>
-  <button id="randomStartBtn">🎲 Zufalls-Start</button>
-  <button id="undoGlobalBtn">⬅ Rückgängig</button>
+<span>Out:</span>
+<select id="outMode">
+<option value="straight">Straight</option>
+<option value="double" selected>Double</option>
+<option value="master">Master</option>
+</select>
+
+<button id="startBtn">Neues Spiel</button>
+<button id="randomBtn">🎲 Startspieler</button>
+<button id="undoBtn">⬅ Undo</button>
+
 </header>
 
 <div class="wrap">
-  <div id="nameSetup" class="card" style="margin-bottom:12px; display:none;">
-    <div style="font-weight:700;margin-bottom:8px;">Spielernamen</div>
-    <div id="nameInputs" class="nameSetup"></div>
-    <div class="actions">
-      <button id="applyNamesBtn">Namen übernehmen</button>
-    </div>
-    <div class="hint">Tipp: Leer lassen = Standardname.</div>
-    <div id="startInfo" class="startInfo"></div>
-  </div>
-
-  <div id="game" class="grid"></div>
-
-  <div class="hint" style="padding:0 6px 14px">
-    Bedienung: <b>Single/Double/Triple</b> wählen → <b>Zahl</b> klicken (1–20, 25, BULL) → füllt Dart 1–3 automatisch.<br>
-    Leere Darts zählen als 0. Bust: unter 0 oder (Double-Out & Rest=1) oder Checkout ohne Double-Finish.
-  </div>
+<div id="game" class="grid"></div>
 </div>
 
 <script>
-  let players = [];
-  let current = 0;
-  let doubleIn = true;
-  let outMode = "double";
 
-  // Eingabezustand (nur für aktuellen Spieler)
-  let mode = "S"; // S, D, T
-  let darts = [null, null, null]; // {label, points, isDouble}
-  let dartIdx = 0;
+let players=[];
+let current=0;
+let history=[];
+let darts=[null,null,null];
+let dartIdx=0;
+let mode="S";
 
-  // History für globales Undo
-  let history = [];
+let startScore=501;
+let doubleIn=false;
+let outMode="double";
 
-  // Anzeige wer startet
-  let startInfoText = "";
+const $=id=>document.getElementById(id);
 
-  const $ = (id) => document.getElementById(id);
-  function deepCopy(x){ return JSON.parse(JSON.stringify(x)); }
+function saveState(){
+history.push(JSON.stringify({
+players,current,darts,dartIdx,mode
+}));
+}
 
-  function saveState() {
-    history.push({
-      players: deepCopy(players),
-      current,
-      mode,
-      darts: deepCopy(darts),
-      dartIdx,
-      startInfoText
-    });
-    if (history.length > 200) history.shift();
-  }
+function undo(){
+if(!history.length)return;
+let s=JSON.parse(history.pop());
+players=s.players;
+current=s.current;
+darts=s.darts;
+dartIdx=s.dartIdx;
+mode=s.mode;
+render();
+}
 
-  function undoGlobal() {
-    if (history.length === 0) return;
-    const last = history.pop();
-    players = last.players;
-    current = last.current;
-    mode = last.mode;
-    darts = last.darts;
-    dartIdx = last.dartIdx;
-    startInfoText = last.startInfoText || "";
-    renderNameSetup();
-    render();
-  }
+function startGame(){
 
-  function startGame() {
-    const count = parseInt($("playerCount").value, 10);
-    doubleIn = $("doubleIn").value === "true";
-    outMode = $("outMode").value;
+startScore=parseInt($("gameMode").value);
+doubleIn=$("doubleIn").value==="true";
+outMode=$("outMode").value;
 
-    players = [];
-    for (let i = 0; i < count; i++) {
-      players.push({
-        name: `Spieler ${i+1}`,
-        score: 301,
-        opened: !doubleIn,
-        won: false,
-        msg: ""
-      });
-    }
-    current = 0;
-    history = [];
-    startInfoText = "";
-    resetTurnInput();
-    renderNameSetup();
-    render();
-  }
+let count=parseInt($("playerCount").value);
 
-  function resetTurnInput(){
-    mode = "S";
-    darts = [null, null, null];
-    dartIdx = 0;
-  }
+players=[];
+for(let i=0;i<count;i++){
+players.push({
+name:"Spieler "+(i+1),
+score:startScore,
+opened:!doubleIn,
+won:false
+});
+}
 
-  function modeLabel(m){
-    if (m === "S") return "Single";
-    if (m === "D") return "Double";
-    return "Triple";
-  }
+current=0;
+history=[];
+resetTurn();
+render();
+}
 
-  function renderNameSetup(){
-    const wrap = $("nameSetup");
-    const inputs = $("nameInputs");
-    const startInfoEl = $("startInfo");
-    inputs.innerHTML = "";
+function randomStart(){
+saveState();
+current=Math.floor(Math.random()*players.length);
+resetTurn();
+render();
+}
 
-    players.forEach((p, i) => {
-      const div = document.createElement("div");
-      div.innerHTML = `<input id="nm_${i}" type="text" placeholder="${escapeHtml(p.name)}" value="${p.name.startsWith('Spieler') ? '' : escapeHtml(p.name)}">`;
-      inputs.appendChild(div);
-    });
+function resetTurn(){
+darts=[null,null,null];
+dartIdx=0;
+mode="S";
+}
 
-    wrap.style.display = "block";
-    if (startInfoEl) startInfoEl.textContent = startInfoText || "";
-  }
+function nextPlayer(){
+current=(current+1)%players.length;
+resetTurn();
+}
 
-  function applyNames(){
-    saveState();
-    players.forEach((p, i) => {
-      const v = ($("nm_" + i)?.value ?? "").trim();
-      p.name = v ? v : `Spieler ${i+1}`;
-    });
-    players.forEach(p => p.msg = "");
-    startInfoText = startInfoText ? startInfoText : `${players[current].name} beginnt.`;
-    renderNameSetup();
-    render();
-  }
+function ensureActive(){
+return !players[current].won;
+}
 
-  function randomStart(){
-    if (!players.length) return;
-    saveState();
-    // zufällig einen Spieler wählen, der nicht gewonnen hat (am Start eigentlich keiner)
-    const alive = players.map((p, i) => ({p,i})).filter(x => !x.p.won);
-    const pick = alive[Math.floor(Math.random() * alive.length)];
-    current = pick.i;
-    resetTurnInput();
-    startInfoText = `${players[current].name} beginnt (zufällig).`;
-    renderNameSetup();
-    render();
-  }
+function pushDart(obj){
+if(!ensureActive())return;
+if(dartIdx>2)return;
+saveState();
+darts[dartIdx]=obj;
+dartIdx++;
+render();
+}
 
-  function render() {
-    let html = "";
+function pickNumber(n){
 
-    players.forEach((p, i) => {
-      const isActive = i === current && !p.won;
-      const disabled = isActive ? "" : "disabled";
-      const di = doubleIn ? (p.opened ? "open" : "closed") : "aus";
+let pts=n;
+let isDouble=false;
 
-      const d = (idx) => {
-        const val = (i === current ? darts[idx] : null);
-        const label = val ? val.label : "—";
-        const pts = val ? val.points : "";
-        return `<div class="dartBox">${label}<small>${pts !== "" ? pts+" pts" : "&nbsp;"}</small></div>`;
-      };
+if(mode==="D"){pts=n*2;isDouble=true;}
+if(mode==="T"){pts=n*3;}
 
-      html += `
-        <div class="card ${isActive ? "active" : ""}">
-          <div class="title">
-            <div class="name">${escapeHtml(p.name)} ${p.won ? "✅" : ""}</div>
-            <div class="pill">DI: ${di} · Out: ${outMode}</div>
-          </div>
+pushDart({
+label:mode+n,
+points:pts,
+isDouble
+});
+}
 
-          <div class="score">${p.score}</div>
+function pickBull(){
+pushDart({
+label:"BULL",
+points:50,
+isDouble:true
+});
+}
 
-          <div class="dartRow">
-            ${d(0)} ${d(1)} ${d(2)}
-          </div>
+function pick25(){
+pushDart({
+label:"25",
+points:25,
+isDouble:false
+});
+}
 
-          <div class="hint ${p.msg ? "err" : ""}">${p.msg ? escapeHtml(p.msg) : "&nbsp;"}</div>
+function pickMiss(){
+pushDart({
+label:"0",
+points:0,
+isDouble:false
+});
+}
 
-          <div class="pad">
-            <div class="modes">
-              <button class="modeBtn ${mode==="S"?"activeMode":""}" onclick="setMode('S')" ${disabled}>Single</button>
-              <button class="modeBtn ${mode==="D"?"activeMode":""}" onclick="setMode('D')" ${disabled}>Double</button>
-              <button class="modeBtn ${mode==="T"?"activeMode":""}" onclick="setMode('T')" ${disabled}>Triple</button>
-              <span class="pill">Aktiv: ${modeLabel(mode)} · Dart ${Math.min(dartIdx+1,3)}/3</span>
-            </div>
+function submitTurn(){
 
-            <div class="nums">
-              ${Array.from({length:20},(_,k)=>k+1).map(n=>`
-                <button onclick="pickNumber(${n})" ${disabled}>${n}</button>
-              `).join("")}
-            </div>
+saveState();
 
-            <div class="specials">
-              <button onclick="pickSpecial('25')" ${disabled}>25</button>
-              <button onclick="pickSpecial('BULL')" ${disabled}>BULL</button>
-              <button onclick="pickSpecial('MISS')" ${disabled}>MISS</button>
-            </div>
+let p=players[current];
 
-            <div class="actions">
-              <button class="tiny" onclick="undoDart()" ${disabled}>← Dart zurück</button>
-              <button class="tiny" onclick="clearTurn()" ${disabled}>C</button>
-              <button onclick="submitTurn()" ${disabled}>OK</button>
-            </div>
-          </div>
+let turn=darts.map(d=>d||{points:0,isDouble:false});
 
-          <div class="hint">Tipp: Für 25/BULL wird der Modus ignoriert (25=25, BULL=50).</div>
-        </div>
-      `;
-    });
+if(!p.opened){
+let idx=turn.findIndex(d=>d.isDouble);
+if(idx===-1){nextPlayer();render();return;}
+p.opened=true;
+for(let i=0;i<idx;i++)turn[i]={points:0,isDouble:false};
+}
 
-    $("game").innerHTML = html;
-  }
+let total=turn[0].points+turn[1].points+turn[2].points;
+let newScore=p.score-total;
 
-  function escapeHtml(s){
-    return (s ?? "").toString()
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+if(newScore<0 || (outMode==="double" && newScore===1)){
+nextPlayer();render();return;
+}
 
-  function setMode(m){
-    saveState();
-    mode = m;
-    render();
-  }
+if(newScore===0){
 
-  function ensureActive(){
-    const p = players[current];
-    return p && !p.won;
-  }
+let last=turn[2];
 
-  function pushDart(obj){
-    if (!ensureActive()) return;
-    if (dartIdx > 2) return;
-    saveState();
-    darts[dartIdx] = obj;
-    dartIdx++;
-    render();
-  }
+if(outMode==="double" && !last.isDouble){
+nextPlayer();render();return;
+}
 
-  function pickNumber(n){
-    if (!ensureActive()) return;
-    if (dartIdx > 2) return;
+if(outMode==="master" && !(last.isDouble || last.points%3===0)){
+nextPlayer();render();return;
+}
 
-    let pts = n;
-    let isDouble = false;
-    let lbl = "S"+n;
+p.score=0;
+p.won=true;
+nextPlayer();
+render();
+return;
+}
 
-    if (mode === "D") { pts = 2*n; isDouble = true; lbl = "D"+n; }
-    if (mode === "T") { pts = 3*n; isDouble = false; lbl = "T"+n; }
+p.score=newScore;
+nextPlayer();
+render();
+}
 
-    pushDart({ label: lbl, points: pts, isDouble });
-  }
+function setMode(m){
+mode=m;
+render();
+}
 
-  function pickSpecial(type){
-    if (!ensureActive()) return;
-    if (dartIdx > 2) return;
+function render(){
 
-    if (type === "MISS") return pushDart({ label:"0", points:0, isDouble:false });
-    if (type === "25")   return pushDart({ label:"25", points:25, isDouble:false });
-    if (type === "BULL") return pushDart({ label:"BULL", points:50, isDouble:true });
-  }
+let html="";
 
-  function undoDart(){
-    if (!ensureActive()) return;
-    if (dartIdx === 0) return;
-    saveState();
-    dartIdx--;
-    darts[dartIdx] = null;
-    render();
-  }
+players.forEach((p,i)=>{
 
-  function clearTurn(){
-    if (!ensureActive()) return;
-    saveState();
-    resetTurnInput();
-    render();
-  }
+let active=i===current && !p.won;
 
-  function nextPlayer() {
-    let tries = 0;
-    do {
-      current = (current + 1) % players.length;
-      tries++;
-      if (tries > players.length + 1) break;
-    } while (players[current].won);
-    resetTurnInput();
-  }
+html+=`
+<div class="card ${active?"active":""}">
+<div><b>${p.name}</b></div>
+<div class="score">${p.score}</div>
 
-  function submitTurn(){
-    if (!ensureActive()) return;
+<div class="dartRow">
+${renderDart(0,i)}
+${renderDart(1,i)}
+${renderDart(2,i)}
+</div>
 
-    saveState();
+<div class="pad">
 
-    const p = players[current];
-    p.msg = "";
+<div class="actions">
+<button onclick="setMode('S')" ${!active?"disabled":""}>Single</button>
+<button onclick="setMode('D')" ${!active?"disabled":""}>Double</button>
+<button onclick="setMode('T')" ${!active?"disabled":""}>Triple</button>
+</div>
 
-    const turnDarts = darts.map(d => d ?? ({label:"0", points:0, isDouble:false}));
+<div class="nums">
+${[...Array(20)].map((_,k)=>`<button onclick="pickNumber(${k+1})" ${!active?"disabled":""}>${k+1}</button>`).join("")}
+</div>
 
-    // Double-In: erst öffnen, wenn im Turn ein Double getroffen wurde.
-    // Darts vor dem Öffnen zählen nicht.
-    if (!p.opened) {
-      const idx = turnDarts.findIndex(d => d.isDouble && d.points > 0);
-      if (idx === -1) {
-        p.msg = "Kein Double-In → nichts zählt";
-        nextPlayer(); render(); return;
-      }
-      p.opened = true;
-      for (let k = 0; k < idx; k++) turnDarts[k] = {label:"0", points:0, isDouble:false};
-    }
+<div class="specials">
+<button onclick="pick25()" ${!active?"disabled":""}>25</button>
+<button onclick="pickBull()" ${!active?"disabled":""}>BULL</button>
+<button onclick="pickMiss()" ${!active?"disabled":""}>MISS</button>
+</div>
 
-    const total = turnDarts[0].points + turnDarts[1].points + turnDarts[2].points;
-    const newScore = p.score - total;
+<div class="actions">
+<button onclick="submitTurn()" ${!active?"disabled":""}>OK</button>
+</div>
 
-    if (newScore < 0 || (outMode === "double" && newScore === 1)) {
-      p.msg = "BUST";
-      nextPlayer(); render(); return;
-    }
+</div>
+</div>
+`;
 
-    if (newScore === 0) {
-      if (outMode === "double") {
-        const last = turnDarts[2];
-        if (!(last.isDouble && last.points > 0)) {
-          p.msg = "BUST (kein Double-Finish)";
-          nextPlayer(); render(); return;
-        }
-      }
-      p.score = 0;
-      p.won = true;
-      p.msg = "WIN ✅";
-      nextPlayer(); render(); return;
-    }
+});
 
-    p.score = newScore;
-    nextPlayer();
-    render();
-  }
+$("game").innerHTML=html;
+}
 
-  $("startBtn").addEventListener("click", startGame);
-  $("randomStartBtn").addEventListener("click", randomStart);
-  $("undoGlobalBtn").addEventListener("click", undoGlobal);
-  $("applyNamesBtn").addEventListener("click", applyNames);
+function renderDart(idx,playerIndex){
+if(playerIndex!==current)return `<div class="dartBox">—</div>`;
+let d=darts[idx];
+if(!d)return `<div class="dartBox">—</div>`;
+return `<div class="dartBox">${d.label}<br>${d.points}</div>`;
+}
 
-  startGame();
+$("startBtn").onclick=startGame;
+$("randomBtn").onclick=randomStart;
+$("undoBtn").onclick=undo;
+
+startGame();
+
 </script>
 
 </body>
