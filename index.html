@@ -27,7 +27,7 @@
 
   .wrap{
     max-width:1200px;margin:0 auto;padding:14px;
-    /* WICHTIG: Platz für das Panel unten – gilt jetzt immer */
+    /* Platz unter dem Content, damit Panel nichts verdeckt */
     padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
   }
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
@@ -41,7 +41,6 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-  /* Desktop Layout */
   .layout{
     display:grid;
     grid-template-columns: 1fr 520px;
@@ -49,7 +48,6 @@
     align-items:start;
   }
 
-  /* Scoreboard list */
   .playerList{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   .playerItem{
     display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -61,11 +59,10 @@
   .pMeta{color:var(--muted);font-size:12px;margin-top:2px}
   .pScore{font-size:28px;font-weight:900;min-width:70px;text-align:right}
 
-  /* Namen oben */
   .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .nameEdit input{width:180px;text-align:left}
 
-  /* Keypad Panel */
+  /* Panel */
   .panelHeader{
     display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
   }
@@ -102,42 +99,40 @@
   .tiny{font-size:12px;padding:8px 10px}
   .toggleBtn{background:var(--btn2)}
 
-  /* ✅ Collapse-Regeln gelten IMMER (damit Toggle garantiert wirkt) */
+  /* Einklappen: gilt IMMER */
   .keypadCard.collapsed{
     max-height: 150px !important;
     overflow: hidden !important;
   }
 
-  /* ✅ “Panel immer fixed” für Touch-Geräte ODER kleinere Breiten
-     (GitHub/Android rendert manchmal Desktop-Breite -> max-width allein reicht nicht)
+  /* ======= Robust Panel: sticky standard =======
+     -> klebt am unteren Viewport-Rand, ohne "fixed"
+     -> funktioniert oft besser in eingebetteten Scrollers
   */
-  @media (pointer: coarse), (max-width: 1400px){
-    /* Content bewusst unter das Panel */
-    .wrap, header, .card, .layout{
-      position: relative;
-      z-index: 1;
-    }
+  .keypadCard{
+    position: sticky;
+    bottom: 0;
+    z-index: 2147483647;
+    isolation: isolate;
+    transform: translateZ(0);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgba(0,0,0,.45);
+    max-height: 420px;
+    overflow-y: auto;
+    background: var(--card);
+  }
 
-    /* PANEL: garantiert oberste Ebene, fixed, bleibt beim Scrollen */
-    .keypadCard{
-      position: fixed !important;
-      left: 0;
-      right: 0;
-      bottom: 0;
+  /* ======= Fallback: fixed (wird per JS gesetzt) ======= */
+  body.use-fixed .keypadCard{
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 
-      z-index: 2147483647 !important;
-
-      isolation: isolate;
-      transform: translateZ(0);
-
-      border-radius: 16px 16px 0 0;
-      box-shadow: 0 -12px 40px rgba(0,0,0,.45);
-
-      max-height: 420px;
-      overflow-y: auto;
-      background: var(--card);
-    }
-
+  /* Layout: auf kleineren Screens 1 Spalte */
+  @media (max-width: 980px){
+    .layout{grid-template-columns: 1fr}
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
   }
@@ -213,7 +208,7 @@
       </div>
 
       <div id="playerList" class="playerList"></div>
-      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel (stabil).</div>
+      <div class="hint">Undo ist stabil (kein Absturz durch History).</div>
     </div>
 
     <!-- Eingabe-Panel -->
@@ -449,7 +444,7 @@ function pushDart(obj){
   state.darts[state.dartIdx]=obj;
   state.dartIdx++;
 
-  state.mode="S";
+  state.mode="S"; // reset to single
 
   renderKeypad();
   renderModeButtons();
@@ -520,6 +515,7 @@ function submitTurn(){
   const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
   const effective = clone(turn);
 
+  // IN (Double-In)
   if(!p.opened && state.doubleIn){
     const idx = effective.findIndex(d=>d.isDouble && d.points>0);
     if(idx===-1){
@@ -536,6 +532,7 @@ function submitTurn(){
   const total = effective[0].points + effective[1].points + effective[2].points;
   const newScore = p.score - total;
 
+  // Bust
   if(newScore < 0 || (state.outMode==="double" && newScore===1)){
     p.msg="BUST";
     updateStats(p, 0);
@@ -544,6 +541,7 @@ function submitTurn(){
     return;
   }
 
+  // Checkout
   if(newScore===0){
     if(state.outMode==="double"){
       const last = effective[2];
@@ -570,6 +568,7 @@ function submitTurn(){
     return;
   }
 
+  // Normal
   p.score=newScore;
   p.msg = total>0 ? `−${total}` : "";
   updateStats(p, total);
@@ -718,6 +717,40 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
+/* ======= Robustheit: Sticky prüfen, sonst Fixed aktivieren =======
+   Wir testen nach Scroll/Resize, ob das Panel unten "klebt".
+   Wenn der Panel-Bottom deutlich über dem Viewport-Bottom liegt, ist sticky im Kontext kaputt -> fixed einschalten.
+*/
+function checkPanelStickiness(){
+  const el = $("keypadCard");
+  if(!el) return;
+
+  const rect = el.getBoundingClientRect();
+  const viewportBottom = window.innerHeight || document.documentElement.clientHeight;
+
+  // Erwartung: rect.bottom ~ viewportBottom (oder minimal drüber wegen Schatten)
+  const diff = Math.abs(rect.bottom - viewportBottom);
+
+  // Wenn diff dauerhaft groß ist, klebt es nicht.
+  // 40px Toleranz, damit es nicht wegen Browser-UI flackert.
+  if (diff > 40) {
+    document.body.classList.add("use-fixed");
+  } else {
+    // nur zurückschalten, wenn wir nicht in einem "bad" Kontext sind
+    // (sonst kann’s flackern). Daher nur entfernen, wenn sticky wirklich gut ist.
+    document.body.classList.remove("use-fixed");
+  }
+}
+
+let _stickyTimer = null;
+function scheduleStickyCheck(){
+  if (_stickyTimer) return;
+  _stickyTimer = setTimeout(()=>{
+    _stickyTimer = null;
+    checkPanelStickiness();
+  }, 120);
+}
+
 /* Wire up */
 $("startBtn").addEventListener("click", startGame);
 $("randomStartBtn").addEventListener("click", randomStart);
@@ -756,11 +789,16 @@ try{
 }catch(e){
   panelCollapsed = false;
 }
-window.addEventListener("resize", applyPanelState);
+
+// Sticky check triggers
+window.addEventListener("scroll", scheduleStickyCheck, {passive:true});
+window.addEventListener("resize", scheduleStickyCheck);
+window.addEventListener("orientationchange", scheduleStickyCheck);
 
 // Start
 startGame();
 applyPanelState();
+scheduleStickyCheck();
 </script>
 
 </body>
