@@ -9,10 +9,11 @@
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
     --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
-    --panelSpace: 420px; /* wird per JS für collapse/expand angepasst */
+    --panelSpace: 420px;
   }
   *{box-sizing:border-box}
   body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}
+
   header{
     padding:12px;border-bottom:1px solid var(--line);
     display:flex;justify-content:center;flex-wrap:wrap;gap:10px;align-items:center
@@ -27,7 +28,7 @@
 
   .wrap{
     max-width:1200px;margin:0 auto;padding:14px;
-    /* Platz unter dem Content, damit Panel nichts verdeckt */
+    /* WICHTIG: Platz für das feste Panel unten */
     padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
   }
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
@@ -43,7 +44,7 @@
 
   .layout{
     display:grid;
-    grid-template-columns: 1fr 520px;
+    grid-template-columns: 1fr;
     gap:12px;
     align-items:start;
   }
@@ -62,7 +63,40 @@
   .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .nameEdit input{width:180px;text-align:left}
 
-  /* Panel */
+  /* ===== Fixed Panel (immer sichtbar) ===== */
+  #keypadCard{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 2147483647;   /* oberste Ebene */
+    isolation: isolate;
+    transform: translateZ(0);
+    background: transparent;
+    pointer-events: none; /* wichtig: nur Panel-Inner soll klickbar sein */
+  }
+
+  /* Innencontainer damit Panel nicht über die ganze Breite “klebt” */
+  .panelInner{
+    pointer-events: auto;
+    max-width:1200px;
+    margin: 0 auto;
+    padding: 0 12px 12px;
+  }
+
+  .keypadCard{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px 16px 0 0;
+    box-shadow:0 -12px 40px rgba(0,0,0,.45);
+    max-height: 420px;
+    overflow-y:auto;
+    padding:12px;
+  }
+
+  .keypadCard.collapsed{
+    max-height: 150px !important;
+    overflow: hidden !important;
+  }
+
   .panelHeader{
     display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
   }
@@ -99,40 +133,7 @@
   .tiny{font-size:12px;padding:8px 10px}
   .toggleBtn{background:var(--btn2)}
 
-  /* Einklappen: gilt IMMER */
-  .keypadCard.collapsed{
-    max-height: 150px !important;
-    overflow: hidden !important;
-  }
-
-  /* ======= Robust Panel: sticky standard =======
-     -> klebt am unteren Viewport-Rand, ohne "fixed"
-     -> funktioniert oft besser in eingebetteten Scrollers
-  */
-  .keypadCard{
-    position: sticky;
-    bottom: 0;
-    z-index: 2147483647;
-    isolation: isolate;
-    transform: translateZ(0);
-    border-radius: 16px 16px 0 0;
-    box-shadow: 0 -12px 40px rgba(0,0,0,.45);
-    max-height: 420px;
-    overflow-y: auto;
-    background: var(--card);
-  }
-
-  /* ======= Fallback: fixed (wird per JS gesetzt) ======= */
-  body.use-fixed .keypadCard{
-    position: fixed !important;
-    left: 0;
-    right: 0;
-    bottom: 0;
-  }
-
-  /* Layout: auf kleineren Screens 1 Spalte */
   @media (max-width: 980px){
-    .layout{grid-template-columns: 1fr}
     .nums{grid-template-columns:repeat(4,1fr)}
     .dartBox{min-width:90px}
   }
@@ -197,7 +198,6 @@
   </div>
 
   <div class="layout">
-    <!-- Übersicht -->
     <div class="card">
       <div class="row">
         <div class="rowLeft">
@@ -208,11 +208,15 @@
       </div>
 
       <div id="playerList" class="playerList"></div>
-      <div class="hint">Undo ist stabil (kein Absturz durch History).</div>
+      <div class="hint">Panel bleibt jetzt immer sichtbar (fixed, außerhalb des Layout-Grids).</div>
     </div>
+  </div>
+</div>
 
-    <!-- Eingabe-Panel -->
-    <div id="keypadCard" class="card keypadCard">
+<!-- ✅ Panel liegt außerhalb des Wrap/Layout -> kann nicht “wegscrollen” -->
+<div id="keypadCard" aria-live="polite">
+  <div class="panelInner">
+    <div class="keypadCard" id="keypadCardInner">
       <div class="panelHeader">
         <div class="panelHeaderLeft">
           <div class="pill">Eingabe-Panel</div>
@@ -325,12 +329,10 @@ function snapshot(){
     banner: state.banner
   };
 }
-
 function saveState(){
   state.history.push(snapshot());
   if (state.history.length > HISTORY_LIMIT) state.history.shift();
 }
-
 function restoreFromSnap(snap){
   state.startScore = snap.startScore;
   state.playerCount = snap.playerCount;
@@ -347,7 +349,6 @@ function restoreFromSnap(snap){
 
   state.banner = snap.banner;
 }
-
 function undo(){
   if(!state.history.length) return;
   const snap = state.history.pop();
@@ -358,9 +359,8 @@ function undo(){
 
 /* Panel toggle */
 let panelCollapsed = false;
-
 function applyPanelState(){
-  const card = $("keypadCard");
+  const card = $("keypadCardInner");
   const btn = $("togglePanelBtn");
   const body = $("panelBody");
 
@@ -371,7 +371,6 @@ function applyPanelState(){
   const space = panelCollapsed ? "170px" : "420px";
   document.documentElement.style.setProperty("--panelSpace", space);
 }
-
 function togglePanel(){
   panelCollapsed = !panelCollapsed;
   try{ localStorage.setItem("darts_panel_collapsed", panelCollapsed ? "1" : "0"); }catch(e){}
@@ -384,12 +383,10 @@ function resetTurn(){
   state.darts=[null,null,null];
   state.dartIdx=0;
 }
-
 function ensureActive(){
   const p = state.players[state.current];
   return p && !p.won;
 }
-
 function startGame(){
   state.startScore = parseInt($("startScore").value,10);
   state.playerCount = parseInt($("playerCount").value,10);
@@ -408,7 +405,6 @@ function startGame(){
   resetTurn();
   renderAll();
 }
-
 function randomStart(){
   if(!state.players.length) return;
   saveState();
@@ -419,7 +415,6 @@ function randomStart(){
   state.banner = `${state.players[state.current].name} beginnt (zufällig).`;
   renderAll();
 }
-
 function syncControlsFromState(){
   $("startScore").value = String(state.startScore);
   $("playerCount").value = String(state.playerCount);
@@ -435,7 +430,6 @@ function setMode(m){
   renderModeButtons();
   renderKeypadHeader();
 }
-
 function pushDart(obj){
   if(!ensureActive()) return;
   if(state.dartIdx>2) return;
@@ -454,7 +448,6 @@ function pushDart(obj){
     setTimeout(()=>{ if(state.dartIdx===3) submitTurn(); }, 120);
   }
 }
-
 function pickNumber(n){
   let mult = state.mode;
   let points=n, isDouble=false, isTriple=false, label=`S${n}`;
@@ -462,13 +455,11 @@ function pickNumber(n){
   if(mult==="T"){ points=3*n; isTriple=true; label=`T${n}`; }
   pushDart({label, points, isDouble, isTriple});
 }
-
 function pickSpecial(type){
   if(type==="MISS") return pushDart({label:"0", points:0, isDouble:false, isTriple:false});
   if(type==="25")   return pushDart({label:"25", points:25, isDouble:false, isTriple:false});
   if(type==="BULL") return pushDart({label:"BULL", points:50, isDouble:true, isTriple:false});
 }
-
 function undoDart(){
   if(!ensureActive()) return;
   if(state.dartIdx===0) return;
@@ -478,7 +469,6 @@ function undoDart(){
   renderKeypad();
   renderKeypadHeader();
 }
-
 function clearTurn(){
   if(!ensureActive()) return;
   saveState();
@@ -487,7 +477,6 @@ function clearTurn(){
   renderModeButtons();
   renderKeypadHeader();
 }
-
 function nextPlayer(){
   let tries=0;
   do{
@@ -497,14 +486,12 @@ function nextPlayer(){
   }while(state.players[state.current].won);
   resetTurn();
 }
-
 function updateStats(p, turnTotal){
   p.stats.darts += 3;
   p.stats.scored += turnTotal;
   p.stats.avg3 = p.stats.darts ? (p.stats.scored / p.stats.darts) * 3 : 0;
   if(turnTotal===180) p.stats.s180 += 1;
 }
-
 function submitTurn(){
   if(!ensureActive()) return;
   saveState();
@@ -599,14 +586,12 @@ function renderBanner(){
   b.classList.add("show");
   b.innerHTML = `<b>${escapeHtml(state.banner)}</b>`;
 }
-
 function renderRulesPill(){
   const outTxt = (state.outMode==="double") ? "OUT AN" : "OUT AUS";
   const inTxt  = state.doubleIn ? "IN AN" : "IN AUS";
   $("rulesPill").textContent =
     `${state.startScore} · ${inTxt} · ${outTxt} · Auto-OK ${state.autoOk ? "AN" : "AUS"}`;
 }
-
 function renderPlayerList(){
   const wrap = $("playerList");
   wrap.innerHTML = "";
@@ -628,7 +613,6 @@ function renderPlayerList(){
     wrap.appendChild(div);
   });
 }
-
 function renderNameEdit(){
   const wrap = $("nameEdit");
   wrap.innerHTML = "";
@@ -650,7 +634,6 @@ function renderNameEdit(){
     wrap.appendChild(inp);
   });
 }
-
 function renderKeypadHeader(){
   const p = state.players[state.current];
   $("currentName").textContent = p ? p.name : "—";
@@ -663,7 +646,6 @@ function renderKeypadHeader(){
   $("modeInfo").textContent =
     `Modus: ${state.mode==="S"?"Single":state.mode==="D"?"Double":"Triple"} · Dart ${Math.min(state.dartIdx+1,3)}/3`;
 }
-
 function renderKeypad(){
   const p = state.players[state.current];
   const d = (idx)=> state.darts[idx];
@@ -696,18 +678,16 @@ function renderKeypad(){
   }
 
   const disable = !ensureActive();
-  document.querySelectorAll("#keypadCard button").forEach(btn=>{
+  document.querySelectorAll("#keypadCardInner button").forEach(btn=>{
     if (btn.id === "togglePanelBtn") return;
     btn.disabled = disable;
   });
 }
-
 function renderModeButtons(){
   $("mS").classList.toggle("active", state.mode==="S");
   $("mD").classList.toggle("active", state.mode==="D");
   $("mT").classList.toggle("active", state.mode==="T");
 }
-
 function escapeHtml(s){
   return (s ?? "").toString()
     .replaceAll("&","&amp;")
@@ -715,40 +695,6 @@ function escapeHtml(s){
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
-}
-
-/* ======= Robustheit: Sticky prüfen, sonst Fixed aktivieren =======
-   Wir testen nach Scroll/Resize, ob das Panel unten "klebt".
-   Wenn der Panel-Bottom deutlich über dem Viewport-Bottom liegt, ist sticky im Kontext kaputt -> fixed einschalten.
-*/
-function checkPanelStickiness(){
-  const el = $("keypadCard");
-  if(!el) return;
-
-  const rect = el.getBoundingClientRect();
-  const viewportBottom = window.innerHeight || document.documentElement.clientHeight;
-
-  // Erwartung: rect.bottom ~ viewportBottom (oder minimal drüber wegen Schatten)
-  const diff = Math.abs(rect.bottom - viewportBottom);
-
-  // Wenn diff dauerhaft groß ist, klebt es nicht.
-  // 40px Toleranz, damit es nicht wegen Browser-UI flackert.
-  if (diff > 40) {
-    document.body.classList.add("use-fixed");
-  } else {
-    // nur zurückschalten, wenn wir nicht in einem "bad" Kontext sind
-    // (sonst kann’s flackern). Daher nur entfernen, wenn sticky wirklich gut ist.
-    document.body.classList.remove("use-fixed");
-  }
-}
-
-let _stickyTimer = null;
-function scheduleStickyCheck(){
-  if (_stickyTimer) return;
-  _stickyTimer = setTimeout(()=>{
-    _stickyTimer = null;
-    checkPanelStickiness();
-  }, 120);
 }
 
 /* Wire up */
@@ -790,15 +736,9 @@ try{
   panelCollapsed = false;
 }
 
-// Sticky check triggers
-window.addEventListener("scroll", scheduleStickyCheck, {passive:true});
-window.addEventListener("resize", scheduleStickyCheck);
-window.addEventListener("orientationchange", scheduleStickyCheck);
-
 // Start
 startGame();
 applyPanelState();
-scheduleStickyCheck();
 </script>
 
 </body>
