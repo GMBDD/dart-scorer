@@ -89,7 +89,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 E</span>
+  <span class="ver">Build: 2026-02-17 F</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -130,10 +130,6 @@
               <option value="double">AN</option>
             </select>
           </div>
-
-          <div class="controlsGroup">
-            <span class="pill" id="starterInfo">Startspieler: 1</span>
-          </div>
         </div>
 
         <!-- Zeile 2 -->
@@ -154,6 +150,7 @@
 
           <div class="controlsGroup">
             <button id="randomStarterBtn">🎲 Startspieler</button>
+            <span class="pill" id="starterInfo">Startspieler: Spieler 1</span>
             <button id="startGameBtn">Spiel starten</button>
           </div>
         </div>
@@ -268,6 +265,16 @@
 
   const HISTORY_LIMIT = 150;
 
+  function getDefaultName(i){ return `Spieler ${i+1}`; }
+  function getStarterName(){
+    const i = Math.max(0, Math.min(setup.starter, setup.playerCount-1));
+    const name = (setup.names[i] || getDefaultName(i)).trim();
+    return name ? name : getDefaultName(i);
+  }
+  function updateStarterInfo(){
+    $("starterInfo").textContent = `Startspieler: ${getStarterName()}`;
+  }
+
   function newPlayer(name){
     return {
       name,
@@ -338,18 +345,27 @@
     const wrap = $("nameInputs");
     wrap.innerHTML = "";
     for(let i=0;i<setup.playerCount;i++){
+      if(!setup.names[i]) setup.names[i] = getDefaultName(i);
+
       const inp = document.createElement("input");
       inp.type="text";
+      // leer anzeigen, aber intern Default behalten
       inp.value = setup.names[i] && !setup.names[i].startsWith("Spieler ") ? setup.names[i] : "";
-      inp.placeholder = `Spieler ${i+1}`;
+      inp.placeholder = getDefaultName(i);
+
       inp.addEventListener("input", ()=>{
-        setup.names[i] = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
+        const v = inp.value.trim();
+        setup.names[i] = v ? v : getDefaultName(i);
+        // Wenn der Startspieler gerade dieser Spieler ist -> Anzeige sofort updaten
+        updateStarterInfo();
       });
+
       wrap.appendChild(inp);
-      if(!setup.names[i]) setup.names[i] = `Spieler ${i+1}`;
     }
 
-    $("starterInfo").textContent = `Startspieler: ${setup.starter+1}`;
+    // Starter validieren + Anzeige
+    if(setup.starter >= setup.playerCount) setup.starter = 0;
+    updateStarterInfo();
   }
 
   function readSetupFromControls(){
@@ -361,11 +377,12 @@
 
     const names = [];
     for(let i=0;i<setup.playerCount;i++){
-      names.push(setup.names[i] ? setup.names[i] : `Spieler ${i+1}`);
+      names.push(setup.names[i] ? setup.names[i] : getDefaultName(i));
     }
     setup.names = names;
 
     if(setup.starter >= setup.playerCount) setup.starter = 0;
+    updateStarterInfo();
   }
 
   ["playerCount","startScore","doubleIn","outMode","autoOk"].forEach(id=>{
@@ -375,14 +392,14 @@
   $("randomStarterBtn").addEventListener("click", ()=>{
     readSetupFromControls();
     setup.starter = Math.floor(Math.random()*setup.playerCount);
-    $("starterInfo").textContent = `Startspieler: ${setup.starter+1}`;
+    updateStarterInfo();
   });
 
   function startNewGame(){
     readSetupFromControls();
     game.players = [];
     for(let i=0;i<setup.playerCount;i++){
-      game.players.push(newPlayer(setup.names[i] || `Spieler ${i+1}`));
+      game.players.push(newPlayer(setup.names[i] || getDefaultName(i)));
     }
     game.current = setup.starter;
     game.mode = "S";
