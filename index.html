@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Darts Scoring – Pro</title>
+<title>Darts Scoring – Pro (Single Keypad)</title>
 
 <style>
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
-    --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44;
+    --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
   }
   *{box-sizing:border-box}
-  body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;text-align:center}
+  body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}
   header{
     padding:12px;border-bottom:1px solid var(--line);
     display:flex;justify-content:center;flex-wrap:wrap;gap:10px;align-items:center
@@ -24,76 +24,81 @@
   button:disabled{opacity:.45;cursor:default}
   select{padding:9px 10px}
   .wrap{max-width:1200px;margin:0 auto;padding:14px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
-  .active{outline:2px solid var(--accent)}
-  .title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .name{font-weight:800}
-  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
-  .score{font-size:40px;font-weight:900;margin:10px 0}
-  .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
-  .err{color:#ffb3b3}
-  .ok{color:#bfffc0}
-  .banner{margin:10px 0 12px;background:#111118;border:1px solid var(--line);border-radius:14px;padding:10px}
+
+  /* Layout: scoreboard + keypad */
+  .layout{
+    display:grid;
+    grid-template-columns: 1fr 520px;
+    gap:12px;
+    align-items:start;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+  }
+
+  .banner{display:none;margin-bottom:12px}
+  .banner.show{display:block}
   .banner b{font-weight:800}
-  .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
+  .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
+  .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px;display:inline-block}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-  /* Namen */
-  .nameSetup{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
-  .nameSetup input{width:170px;text-align:left}
+  /* Scoreboard list */
+  .playerList{display:flex;flex-direction:column;gap:8px}
+  .playerItem{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 10px;border:1px solid var(--line);border-radius:14px;background:#101016;
+  }
+  .playerItem.active{outline:2px solid var(--accent)}
+  .playerItem.win{opacity:.65}
+  .pName{font-weight:800}
+  .pMeta{color:var(--muted);font-size:12px;margin-top:2px}
+  .pScore{font-size:28px;font-weight:900;min-width:70px;text-align:right}
+  .nameEdit{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .nameEdit input{width:180px;text-align:left}
 
-  /* Dart-Display */
-  .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+  /* Keypad (single) */
+  .keypadTop{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap
+  }
+  .bigScore{font-size:44px;font-weight:950;margin:8px 0}
+  .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .dartBox{
-    min-width:86px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);
-    background:#101016;font-weight:800
+    min-width:110px;padding:10px;border-radius:14px;border:1px solid var(--line);
+    background:#0f0f14;text-align:center;font-weight:900
   }
-  .dartBox small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+  .dartBox small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+  .msg{min-height:18px;font-size:13px;color:var(--muted);text-align:center}
+  .msg.ok{color:var(--ok)}
+  .msg.bad{color:var(--bad)}
 
-  /* Keypad */
-  .pad{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
-  .pad .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-  .pad .modeBtn{background:var(--btn2)}
-  .pad .modeBtn.activeMode{outline:2px solid var(--accent)}
+  .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .modeBtn{background:var(--btn2)}
+  .modeBtn.active{outline:2px solid var(--accent)}
   .nums{
-    display:grid;gap:8px;
-    grid-template-columns:repeat(5,minmax(48px,1fr));
-    max-width:460px;margin:0 auto 10px
+    display:grid;gap:8px;grid-template-columns:repeat(5,1fr);
+    max-width:520px;margin:0 auto 10px
   }
-  .nums button{padding:10px 0}
+  .nums button{padding:12px 0}
   .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   .actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-  .tiny{font-size:12px;padding:8px 10px}
 
-  /* Stats */
-  .stats{
-    display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));
-    max-width:520px;margin:10px auto 0
-  }
-  .stat{
-    border:1px solid var(--line);border-radius:12px;padding:8px;background:#101016;
-    text-align:left
-  }
-  .stat b{display:block}
-  .stat span{color:var(--muted);font-size:12px}
-
-  /* Cricket table */
-  .cricket{
-    margin-top:10px;
-    border-top:1px solid var(--line);
-    padding-top:10px;
-    text-align:left;
-  }
-  table{width:100%;border-collapse:collapse}
-  th,td{border-bottom:1px solid var(--line);padding:8px 6px;font-size:13px}
-  th{color:var(--muted);font-weight:700;text-align:left}
-  .marks{font-weight:800}
-  .closed{color:#bfffc0}
-  .open{color:#ffefb3}
-
-  @media (max-width:520px){
+  /* Mobile: keypad sticky bottom, scoreboard above */
+  @media (max-width: 980px){
+    .layout{grid-template-columns: 1fr}
+    .keypadCard{
+      position:sticky;
+      bottom:0;
+      z-index:10;
+      box-shadow:0 -10px 30px rgba(0,0,0,.35);
+    }
     .nums{grid-template-columns:repeat(4,1fr)}
-    .dartBox{min-width:78px}
+    .dartBox{min-width:90px}
   }
 </style>
 </head>
@@ -102,12 +107,6 @@
 
 <header>
   <strong>🎯 Darts Scoring – Pro</strong>
-
-  <span>Spiel:</span>
-  <select id="gameType">
-    <option value="x01" selected>X01 (301/501/…)</option>
-    <option value="cricket">Cricket</option>
-  </select>
 
   <span>Start:</span>
   <select id="startScore">
@@ -142,101 +141,471 @@
     <option value="true">AN</option>
   </select>
 
-  <span>Sound:</span>
-  <select id="soundOn">
-    <option value="false" selected>AUS</option>
-    <option value="true">AN</option>
-  </select>
-
   <button id="startBtn">Neues Spiel</button>
   <button id="randomStartBtn">🎲 Startspieler</button>
   <button id="undoBtn">⬅ Undo</button>
 </header>
 
 <div class="wrap">
-  <div class="card">
-    <div class="row" style="justify-content:space-between;align-items:flex-start">
-      <div style="text-align:left">
-        <div style="font-weight:800;margin-bottom:6px">Spielernamen</div>
-        <div id="nameInputs" class="nameSetup"></div>
-        <div class="hint">Namen ändern geht jederzeit (ohne Neustart).</div>
+  <div id="banner" class="card banner"></div>
+
+  <div class="layout">
+    <!-- Scoreboard -->
+    <div class="card">
+      <div class="row">
+        <div class="rowLeft">
+          <div style="font-weight:900">Übersicht</div>
+          <span id="rulesPill" class="pill"></span>
+        </div>
+        <div class="pill">Aktiver Spieler ist markiert</div>
       </div>
-      <div style="text-align:right">
-        <div id="banner" class="banner" style="display:none"></div>
-        <div class="hint">Undo geht auch nach OK & Spielerwechsel.</div>
+
+      <div id="playerList" class="playerList" style="margin-top:10px"></div>
+
+      <div class="hint">
+        Namen: unten ändern. Undo funktioniert auch nach OK & Spielerwechsel.
+      </div>
+
+      <div id="nameEdit" class="nameEdit"></div>
+    </div>
+
+    <!-- Single Keypad -->
+    <div class="card keypadCard">
+      <div class="keypadTop">
+        <div>
+          <div class="pill">Eingabe-Panel (einmal)</div>
+          <div style="font-weight:950;font-size:18px;margin-top:6px">
+            Aktuell: <span id="currentName">—</span>
+          </div>
+        </div>
+        <div class="pill" id="diState">—</div>
+      </div>
+
+      <div class="bigScore" id="currentScore">—</div>
+
+      <div class="dartRow">
+        <div class="dartBox" id="d0">—<small>&nbsp;</small></div>
+        <div class="dartBox" id="d1">—<small>&nbsp;</small></div>
+        <div class="dartBox" id="d2">—<small>&nbsp;</small></div>
+      </div>
+
+      <div id="msg" class="msg">&nbsp;</div>
+
+      <div class="modes">
+        <button class="modeBtn" id="mS">Single</button>
+        <button class="modeBtn" id="mD">Double</button>
+        <button class="modeBtn" id="mT">Triple</button>
+        <span class="pill" id="modeInfo">Modus: Single · Dart 1/3</span>
+      </div>
+
+      <div class="nums" id="nums"></div>
+
+      <div class="specials">
+        <button id="b25">25</button>
+        <button id="bBull">BULL</button>
+        <button id="bMiss">MISS</button>
+      </div>
+
+      <div class="actions">
+        <button class="tiny" id="undoDartBtn">← Dart zurück</button>
+        <button class="tiny" id="clearBtn">C</button>
+        <button id="okBtn">OK</button>
+      </div>
+
+      <div class="hint">
+        Bedienung: Modus wählen → Zahl klicken. <b>Nach jeder Eingabe springt Modus automatisch auf Single</b>.
       </div>
     </div>
-  </div>
-
-  <div id="game" class="grid" style="margin-top:12px"></div>
-
-  <div class="hint" style="padding:0 6px 14px">
-    Eingabe: <b>Single/Double/Triple</b> wählen → Zahl klicken (1–20) oder 25/BULL/MISS.
-    <br>Cricket: Triple=3 Marks, Double=2 Marks, Single=1 Mark.
-    <br><b>Pro-Logik:</b> Nach jeder Eingabe springt der Modus automatisch zurück auf <b>Single</b>.
   </div>
 </div>
 
 <script>
 /* =========================
-   State + Helpers
+   State
 ========================= */
-const $ = (id) => document.getElementById(id);
-const deepCopy = (x) => JSON.parse(JSON.stringify(x));
+const $ = (id)=>document.getElementById(id);
+const deepCopy = (x)=>JSON.parse(JSON.stringify(x));
 
 let state = {
-  gameType: "x01",
   startScore: 501,
   playerCount: 2,
   doubleIn: false,
   outMode: "double",
   autoOk: false,
-  soundOn: false,
 
   players: [],
   current: 0,
 
-  // current turn input
-  mode: "S", // S, D, T
-  darts: [null, null, null],
+  mode: "S",          // S D T (resets to S after each dart)
+  darts: [null,null,null],
   dartIdx: 0,
 
-  bannerText: "",
+  banner: "",
   history: []
 };
 
+function newPlayer(name){
+  return {
+    name,
+    score: state.startScore,
+    opened: !state.doubleIn,
+    won: false,
+    msg: "",
+    stats: { darts:0, scored:0, avg3:0, s180:0, bestFinish:0 }
+  };
+}
+
 function saveState(){
-  state.history.push(deepCopy({
-    gameType: state.gameType,
-    startScore: state.startScore,
-    playerCount: state.playerCount,
-    doubleIn: state.doubleIn,
-    outMode: state.outMode,
-    autoOk: state.autoOk,
-    soundOn: state.soundOn,
-    players: state.players,
-    current: state.current,
-    mode: state.mode,
-    darts: state.darts,
-    dartIdx: state.dartIdx,
-    bannerText: state.bannerText
-  }));
-  if (state.history.length > 300) state.history.shift();
+  state.history.push(deepCopy(state));
+  if(state.history.length>300) state.history.shift();
 }
 
 function undo(){
-  if (!state.history.length) return;
-  const last = state.history.pop();
-  Object.assign(state, last);
+  if(!state.history.length) return;
+  state = state.history.pop();
   syncControlsFromState();
-  renderNames();
-  render();
+  renderAll();
 }
 
-function resetTurnInput(){
-  state.mode = "S";
-  state.darts = [null, null, null];
-  state.dartIdx = 0;
+function resetTurn(){
+  state.mode="S";
+  state.darts=[null,null,null];
+  state.dartIdx=0;
+}
+
+function ensureActive(){
+  const p = state.players[state.current];
+  return p && !p.won;
+}
+
+/* =========================
+   Init / Controls
+========================= */
+function startGame(){
+  state.startScore = parseInt($("startScore").value,10);
+  state.playerCount = parseInt($("playerCount").value,10);
+  state.doubleIn = $("doubleIn").value==="true";
+  state.outMode = $("outMode").value;
+  state.autoOk = $("autoOk").value==="true";
+
+  state.players=[];
+  for(let i=0;i<state.playerCount;i++){
+    state.players.push(newPlayer(`Spieler ${i+1}`));
+  }
+  state.current=0;
+  state.banner="";
+  state.history=[];
+  resetTurn();
+  renderAll();
+}
+
+function randomStart(){
+  if(!state.players.length) return;
+  saveState();
+  const alive = state.players.map((p,i)=>({p,i})).filter(x=>!x.p.won);
+  const pick = alive[Math.floor(Math.random()*alive.length)];
+  state.current = pick.i;
+  resetTurn();
+  state.banner = `${state.players[state.current].name} beginnt (zufällig).`;
+  renderAll();
+}
+
+function syncControlsFromState(){
+  $("startScore").value = String(state.startScore);
+  $("playerCount").value = String(state.playerCount);
+  $("doubleIn").value = String(state.doubleIn);
+  $("outMode").value = state.outMode;
+  $("autoOk").value = String(state.autoOk);
+}
+
+/* =========================
+   Input logic
+========================= */
+function setMode(m){
+  if(!ensureActive()) return;
+  saveState();
+  state.mode = m;
+  renderKeypadHeader();
+  renderModeButtons();
+}
+
+function pushDart(obj){
+  if(!ensureActive()) return;
+  if(state.dartIdx>2) return;
+
+  saveState();
+
+  state.darts[state.dartIdx]=obj;
+  state.dartIdx++;
+
+  // ✅ After each input => back to Single
+  state.mode="S";
+
+  renderKeypad();
+  renderModeButtons();
+
+  if(state.autoOk && state.dartIdx===3){
+    setTimeout(()=>{ if(state.dartIdx===3) submitTurn(); }, 120);
+  }
+}
+
+function pickNumber(n){
+  let mult = state.mode;
+  let points=n, isDouble=false, isTriple=false, label=`S${n}`;
+
+  if(mult==="D"){ points=2*n; isDouble=true; label=`D${n}`; }
+  if(mult==="T"){ points=3*n; isTriple=true; label=`T${n}`; }
+
+  pushDart({label, points, isDouble, isTriple, raw:{type:"number", n, mult}});
+}
+
+function pickSpecial(type){
+  if(type==="MISS") return pushDart({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}});
+  if(type==="25")   return pushDart({label:"25", points:25, isDouble:false, isTriple:false, raw:{type:"25"}});
+  if(type==="BULL") return pushDart({label:"BULL", points:50, isDouble:true, isTriple:false, raw:{type:"bull"}});
+}
+
+function undoDart(){
+  if(!ensureActive()) return;
+  if(state.dartIdx===0) return;
+  saveState();
+  state.dartIdx--;
+  state.darts[state.dartIdx]=null;
+  renderKeypad();
+}
+
+function clearTurn(){
+  if(!ensureActive()) return;
+  saveState();
+  resetTurn();
+  renderKeypad();
+  renderModeButtons();
+}
+
+function nextPlayer(){
+  let tries=0;
+  do{
+    state.current = (state.current+1)%state.players.length;
+    tries++;
+    if(tries>state.players.length+1) break;
+  }while(state.players[state.current].won);
+  resetTurn();
+}
+
+function updateStats(p, turnTotal){
+  p.stats.darts += 3;
+  p.stats.scored += turnTotal;
+  p.stats.avg3 = p.stats.darts ? (p.stats.scored / p.stats.darts) * 3 : 0;
+  if(turnTotal===180) p.stats.s180 += 1;
+}
+
+function submitTurn(){
+  if(!ensureActive()) return;
+  saveState();
+
+  const p = state.players[state.current];
+  p.msg="";
+
+  const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}}));
+  let effective = deepCopy(turn);
+
+  // Double-In
+  if(!p.opened && state.doubleIn){
+    const idx = effective.findIndex(d=>d.isDouble && d.points>0);
+    if(idx===-1){
+      p.msg="Kein Double-In → nichts zählt";
+      updateStats(p, 0);
+      nextPlayer();
+      renderAll();
+      return;
+    }
+    p.opened=true;
+    for(let k=0;k<idx;k++) effective[k]={label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"}};
+  }
+
+  const total = effective[0].points + effective[1].points + effective[2].points;
+  const newScore = p.score - total;
+
+  // Bust rules
+  if(newScore < 0 || (state.outMode!=="straight" && newScore===1)){
+    p.msg="BUST";
+    updateStats(p, 0);
+    nextPlayer();
+    renderAll();
+    return;
+  }
+
+  // Checkout
+  if(newScore===0){
+    const last = effective[2];
+
+    if(state.outMode==="double" && !(last.isDouble && last.points>0)){
+      p.msg="BUST (kein Double-Finish)";
+      updateStats(p, 0);
+      nextPlayer();
+      renderAll();
+      return;
+    }
+    if(state.outMode==="master" && !((last.isDouble && last.points>0) || (last.isTriple && last.points>0))){
+      p.msg="BUST (kein Master-Finish)";
+      updateStats(p, 0);
+      nextPlayer();
+      renderAll();
+      return;
+    }
+
+    const finish = p.score;
+    p.stats.bestFinish = Math.max(p.stats.bestFinish, finish);
+
+    p.score=0;
+    p.won=true;
+    p.msg="WIN ✅";
+    updateStats(p, total);
+    state.banner = `${p.name} gewinnt! (Finish ${finish})`;
+
+    nextPlayer();
+    renderAll();
+    return;
+  }
+
+  // Normal
+  p.score=newScore;
+  p.msg = total>0 ? `−${total}` : "";
+  updateStats(p, total);
+
+  nextPlayer();
+  renderAll();
+}
+
+/* =========================
+   Render
+========================= */
+function renderAll(){
+  renderBanner();
+  renderRulesPill();
+  renderPlayerList();
+  renderNameEdit();
+  renderKeypad();
+  renderModeButtons();
+  renderKeypadHeader();
+}
+
+function renderBanner(){
+  const b = $("banner");
+  if(!state.banner){
+    b.classList.remove("show");
+    b.innerHTML="";
+    return;
+  }
+  b.classList.add("show");
+  b.innerHTML = `<b>${escapeHtml(state.banner)}</b>`;
+}
+
+function renderRulesPill(){
+  $("rulesPill").textContent =
+    `${state.startScore} · DI ${state.doubleIn ? "AN" : "AUS"} · Out ${state.outMode} · Auto-OK ${state.autoOk ? "AN" : "AUS"}`;
+}
+
+function renderPlayerList(){
+  const wrap = $("playerList");
+  wrap.innerHTML = "";
+
+  state.players.forEach((p,i)=>{
+    const div = document.createElement("div");
+    div.className = "playerItem" + (i===state.current && !p.won ? " active" : "") + (p.won ? " win" : "");
+    const di = state.doubleIn ? (p.opened ? "open" : "closed") : "aus";
+    const avg = (p.stats.avg3||0).toFixed(1);
+
+    div.innerHTML = `
+      <div style="min-width:0">
+        <div class="pName">${escapeHtml(p.name)} ${p.won ? "✅" : ""}</div>
+        <div class="pMeta">DI: ${di} · Avg: ${avg} · 180s: ${p.stats.s180} · Best: ${p.stats.bestFinish}</div>
+        <div class="pMeta">${p.msg ? escapeHtml(p.msg) : "&nbsp;"}</div>
+      </div>
+      <div class="pScore">${p.score}</div>
+    `;
+    wrap.appendChild(div);
+  });
+}
+
+function renderNameEdit(){
+  const wrap = $("nameEdit");
+  wrap.innerHTML = "";
+
+  state.players.forEach((p,i)=>{
+    const inp = document.createElement("input");
+    inp.type="text";
+    inp.value = p.name.startsWith("Spieler ") ? "" : p.name;
+    inp.placeholder = p.name;
+    inp.addEventListener("input", ()=>{
+      p.name = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
+      renderPlayerList();
+      renderKeypadHeader();
+      if(state.banner) renderBanner();
+    });
+    inp.addEventListener("blur", ()=> saveState());
+    wrap.appendChild(inp);
+  });
+}
+
+function renderKeypadHeader(){
+  const p = state.players[state.current];
+  $("currentName").textContent = p ? p.name : "—";
+  $("currentScore").textContent = p ? p.score : "—";
+
+  const di = state.doubleIn ? (p.opened ? "DI: open" : "DI: closed") : "DI: aus";
+  $("diState").textContent = `${di} · Out: ${state.outMode}`;
+}
+
+function renderKeypad(){
+  const p = state.players[state.current];
+  const d = (idx)=> state.darts[idx];
+
+  const box = (el, obj)=>{
+    if(!obj){ el.innerHTML = `—<small>&nbsp;</small>`; return; }
+    el.innerHTML = `${escapeHtml(obj.label)}<small>${obj.points} pts</small>`;
+  };
+
+  box($("d0"), d(0));
+  box($("d1"), d(1));
+  box($("d2"), d(2));
+
+  // message for current player
+  const msg = $("msg");
+  const m = p?.msg || "";
+  msg.className = "msg";
+  if(m.includes("WIN")) msg.classList.add("ok");
+  if(m.includes("BUST")) msg.classList.add("bad");
+  msg.textContent = m ? m : " ";
+  $("modeInfo").textContent = `Modus: ${state.mode==="S"?"Single":state.mode==="D"?"Double":"Triple"} · Dart ${Math.min(state.dartIdx+1,3)}/3`;
+
+  // build number buttons once (if empty)
+  const nums = $("nums");
+  if(!nums.dataset.built){
+    nums.dataset.built="1";
+    for(let n=1;n<=20;n++){
+      const b=document.createElement("button");
+      b.textContent=String(n);
+      b.addEventListener("click", ()=>pickNumber(n));
+      nums.appendChild(b);
+    }
+  }
+
+  // disable keypad if current player already won
+  const disable = !ensureActive();
+  const allButtons = document.querySelectorAll(".keypadCard button, .keypadCard select, .keypadCard input");
+  allButtons.forEach(btn=>{
+    // keep global header buttons enabled; here only keypad area
+    btn.disabled = disable;
+  });
+
+  // But allow OK/undo/clear also disabled when won -> fine (no input)
+}
+
+function renderModeButtons(){
+  $("mS").classList.toggle("active", state.mode==="S");
+  $("mD").classList.toggle("active", state.mode==="D");
+  $("mT").classList.toggle("active", state.mode==="T");
 }
 
 function escapeHtml(s){
@@ -249,574 +618,35 @@ function escapeHtml(s){
 }
 
 /* =========================
-   Sound (no external files)
-========================= */
-let audioCtx = null;
-function beep(freq=660, ms=70, gain=0.05){
-  if (!state.soundOn) return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "sine";
-    o.frequency.value = freq;
-    g.gain.value = gain;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    setTimeout(()=>{ o.stop(); }, ms);
-  }catch(e){}
-}
-function soundFor(type){
-  if(type==="click") beep(720,60,0.04);
-  if(type==="bust") beep(240,120,0.06);
-  if(type==="win"){ beep(880,90,0.06); setTimeout(()=>beep(660,110,0.06),110); }
-  if(type==="undo") beep(520,70,0.04);
-}
-
-/* =========================
-   Game init
-========================= */
-function newPlayer(name, startScore){
-  return {
-    name,
-    // X01
-    score: startScore,
-    opened: !state.doubleIn,
-    won: false,
-    msg: "",
-
-    // X01 stats
-    stats: {
-      darts: 0,
-      scored: 0,
-      avg3: 0,
-      s180: 0,
-      bestFinish: 0
-    },
-
-    // Cricket
-    cricket: {
-      points: 0,
-      marks: { "20":0,"19":0,"18":0,"17":0,"16":0,"15":0,"BULL":0 }
-    }
-  };
-}
-
-function startGame(){
-  state.gameType = $("gameType").value;
-  state.startScore = parseInt($("startScore").value, 10);
-  state.playerCount = parseInt($("playerCount").value, 10);
-  state.doubleIn = $("doubleIn").value === "true";
-  state.outMode = $("outMode").value;
-  state.autoOk = $("autoOk").value === "true";
-  state.soundOn = $("soundOn").value === "true";
-
-  state.players = [];
-  for(let i=0;i<state.playerCount;i++){
-    state.players.push(newPlayer(`Spieler ${i+1}`, state.startScore));
-  }
-  state.current = 0;
-  state.bannerText = "";
-  state.history = [];
-  resetTurnInput();
-
-  applyGameTypeUiRules();
-  renderNames();
-  render();
-}
-
-function applyGameTypeUiRules(){
-  const cricket = state.gameType === "cricket";
-  $("startScore").disabled = cricket;
-  $("doubleIn").disabled = cricket;
-  $("outMode").disabled = cricket;
-}
-
-/* =========================
-   Names
-========================= */
-function renderNames(){
-  const wrap = $("nameInputs");
-  wrap.innerHTML = "";
-  state.players.forEach((p, i)=>{
-    const inp = document.createElement("input");
-    inp.type = "text";
-    inp.value = p.name.startsWith("Spieler ") ? "" : p.name;
-    inp.placeholder = p.name;
-    inp.addEventListener("input", ()=>{
-      p.name = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
-      renderBanner();
-      render();
-    });
-    inp.addEventListener("blur", ()=>{
-      saveState();
-    });
-    wrap.appendChild(inp);
-  });
-}
-
-function setBanner(text){
-  state.bannerText = text || "";
-  renderBanner();
-}
-
-function renderBanner(){
-  const b = $("banner");
-  if (!state.bannerText){
-    b.style.display = "none";
-    b.innerHTML = "";
-    return;
-  }
-  b.style.display = "block";
-  b.innerHTML = `<b>${escapeHtml(state.bannerText)}</b>`;
-}
-
-/* =========================
-   Random start
-========================= */
-function randomStart(){
-  if(!state.players.length) return;
-  saveState();
-  const alive = state.players
-    .map((p,i)=>({p,i}))
-    .filter(x=>!x.p.won);
-  const pick = alive[Math.floor(Math.random()*alive.length)];
-  state.current = pick.i;
-  resetTurnInput();
-  setBanner(`${state.players[state.current].name} beginnt (zufällig).`);
-  render();
-}
-
-/* =========================
-   Input / Keypad
-========================= */
-function ensureActive(){
-  const p = state.players[state.current];
-  return p && !p.won;
-}
-
-function setMode(m){
-  if(!ensureActive()) return;
-  saveState();
-  state.mode = m;
-  render();
-}
-
-function pushDart(obj){
-  if(!ensureActive()) return;
-  if(state.dartIdx > 2) return;
-
-  saveState();
-
-  state.darts[state.dartIdx] = obj;
-  state.dartIdx++;
-
-  // ✅ PRO-ÄNDERUNG: nach jeder Eingabe automatisch zurück auf Single
-  state.mode = "S";
-
-  soundFor("click");
-  render();
-
-  if(state.autoOk && state.dartIdx === 3){
-    setTimeout(()=>{
-      if(state.dartIdx === 3) submitTurn();
-    }, 120);
-  }
-}
-
-function pickNumber(n){
-  if(!ensureActive()) return;
-  if(state.dartIdx > 2) return;
-
-  let mult = state.mode; // S/D/T
-  let points = n;
-  let isDouble = false;
-  let isTriple = false;
-  let label = `S${n}`;
-
-  if(mult === "D"){ points = 2*n; isDouble = true; label = `D${n}`; }
-  if(mult === "T"){ points = 3*n; isTriple = true; label = `T${n}`; }
-
-  pushDart({ label, points, isDouble, isTriple, raw: {type:"number", n, mult} });
-}
-
-function pickSpecial(type){
-  if(!ensureActive()) return;
-  if(state.dartIdx > 2) return;
-
-  if(type==="MISS") return pushDart({ label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"} });
-  if(type==="25") return pushDart({ label:"25", points:25, isDouble:false, isTriple:false, raw:{type:"25"} });
-  if(type==="BULL") return pushDart({ label:"BULL", points:50, isDouble:true, isTriple:false, raw:{type:"bull"} });
-}
-
-function undoDart(){
-  if(!ensureActive()) return;
-  if(state.dartIdx === 0) return;
-  saveState();
-  state.dartIdx--;
-  state.darts[state.dartIdx] = null;
-  soundFor("undo");
-  render();
-}
-
-function clearTurn(){
-  if(!ensureActive()) return;
-  saveState();
-  resetTurnInput();
-  soundFor("undo");
-  render();
-}
-
-/* =========================
-   Turn submit (X01 + Cricket)
-========================= */
-function nextPlayer(){
-  let tries = 0;
-  do{
-    state.current = (state.current + 1) % state.players.length;
-    tries++;
-    if(tries > state.players.length + 1) break;
-  }while(state.players[state.current].won);
-
-  resetTurnInput();
-}
-
-function submitTurn(){
-  if(!ensureActive()) return;
-
-  saveState();
-
-  const p = state.players[state.current];
-  p.msg = "";
-
-  const turn = state.darts.map(d => d ?? ({label:"0",points:0,isDouble:false,isTriple:false,raw:{type:"miss"}}));
-
-  if(state.gameType === "x01"){
-    submitTurnX01(p, turn);
-    return;
-  }
-
-  submitTurnCricket(p, turn);
-}
-
-function updateX01Stats(p, turnTotal){
-  p.stats.darts += 3;
-  p.stats.scored += turnTotal;
-  p.stats.avg3 = p.stats.darts ? (p.stats.scored / p.stats.darts) * 3 : 0;
-  if(turnTotal === 180) p.stats.s180 += 1;
-}
-
-function submitTurnX01(p, turn){
-  let effectiveTurn = deepCopy(turn);
-
-  if(!p.opened && state.doubleIn){
-    const idx = effectiveTurn.findIndex(d => d.isDouble && d.points > 0);
-    if(idx === -1){
-      p.msg = "Kein Double-In → nichts zählt";
-      soundFor("bust");
-      updateX01Stats(p, 0);
-      nextPlayer();
-      render();
-      return;
-    }
-    p.opened = true;
-    for(let k=0;k<idx;k++) effectiveTurn[k] = {label:"0",points:0,isDouble:false,isTriple:false,raw:{type:"miss"}};
-  }
-
-  const total = effectiveTurn[0].points + effectiveTurn[1].points + effectiveTurn[2].points;
-  const newScore = p.score - total;
-
-  if(newScore < 0 || (state.outMode !== "straight" && newScore === 1)){
-    p.msg = "BUST";
-    soundFor("bust");
-    updateX01Stats(p, 0);
-    nextPlayer();
-    render();
-    return;
-  }
-
-  if(newScore === 0){
-    const last = effectiveTurn[2];
-
-    if(state.outMode === "double" && !(last.isDouble && last.points > 0)){
-      p.msg = "BUST (kein Double-Finish)";
-      soundFor("bust");
-      updateX01Stats(p, 0);
-      nextPlayer();
-      render();
-      return;
-    }
-    if(state.outMode === "master" && !((last.isDouble && last.points>0) || (last.isTriple && last.points>0))){
-      p.msg = "BUST (kein Master-Finish)";
-      soundFor("bust");
-      updateX01Stats(p, 0);
-      nextPlayer();
-      render();
-      return;
-    }
-
-    const finishValue = p.score;
-    p.stats.bestFinish = Math.max(p.stats.bestFinish, finishValue);
-
-    p.score = 0;
-    p.won = true;
-    p.msg = "WIN ✅";
-    soundFor("win");
-    updateX01Stats(p, total);
-
-    setBanner(`${p.name} gewinnt! (Finish ${finishValue})`);
-    nextPlayer();
-    render();
-    return;
-  }
-
-  p.score = newScore;
-  p.msg = total>0 ? `−${total}` : "";
-  updateX01Stats(p, total);
-
-  nextPlayer();
-  render();
-}
-
-/* ========= Cricket ========= */
-const CRICKET_TARGETS = ["20","19","18","17","16","15","BULL"];
-
-function marksForDart(d){
-  if(d.raw?.type === "bull") return {target:"BULL", marks:1};
-  if(d.raw?.type === "25") return {target:null, marks:0};
-  if(d.raw?.type === "number"){
-    const n = d.raw.n;
-    if(n >= 15 && n <= 20){
-      const mult = d.raw.mult;
-      const m = (mult==="T") ? 3 : (mult==="D") ? 2 : 1;
-      return {target:String(n), marks:m};
-    }
-  }
-  return {target:null, marks:0};
-}
-
-function isClosed(player, target){
-  return (player.cricket.marks[target] ?? 0) >= 3;
-}
-
-function submitTurnCricket(p, turn){
-  const opponents = state.players.filter(x => x !== p);
-  let pointsGained = 0;
-
-  for(const d of turn){
-    const {target, marks} = marksForDart(d);
-    if(!target || marks<=0) continue;
-
-    const before = p.cricket.marks[target] || 0;
-    const after = before + marks;
-
-    const someoneOpen = opponents.some(o => !isClosed(o, target));
-
-    if(someoneOpen){
-      const beforeOver = Math.max(0, before - 3);
-      const afterOver = Math.max(0, after - 3);
-      const newOver = afterOver - beforeOver;
-
-      if(newOver > 0){
-        if(target === "BULL") pointsGained += 25 * newOver;
-        else pointsGained += parseInt(target,10) * newOver;
-      }
-    }
-
-    p.cricket.marks[target] = after;
-  }
-
-  p.cricket.points += pointsGained;
-
-  const allClosed = CRICKET_TARGETS.every(t => isClosed(p, t));
-  const leadingOrTied = opponents.every(o => p.cricket.points >= o.cricket.points);
-
-  if(allClosed && leadingOrTied){
-    p.won = true;
-    p.msg = "WIN ✅";
-    soundFor("win");
-    setBanner(`${p.name} gewinnt Cricket!`);
-    nextPlayer();
-    render();
-    return;
-  }
-
-  p.msg = pointsGained > 0 ? `+${pointsGained} Punkte` : "";
-  if(pointsGained>0) soundFor("click");
-
-  nextPlayer();
-  render();
-}
-
-/* =========================
-   Render
-========================= */
-function render(){
-  applyGameTypeUiRules();
-  renderBanner();
-
-  let html = "";
-
-  state.players.forEach((p, i)=>{
-    const isActive = (i === state.current) && !p.won;
-    const disabled = isActive ? "" : "disabled";
-
-    const diText = state.gameType === "x01"
-      ? (state.doubleIn ? (p.opened ? "DI: open" : "DI: closed") : "DI: aus")
-      : "Cricket";
-
-    const outText = state.gameType === "x01" ? `Out: ${state.outMode}` : `Punkte: ${p.cricket.points}`;
-
-    const dBox = (idx)=>{
-      const val = (i === state.current ? state.darts[idx] : null);
-      const label = val ? val.label : "—";
-      const pts = val ? val.points : "";
-      return `<div class="dartBox">${label}<small>${pts!=="" ? pts+" pts" : "&nbsp;"}</small></div>`;
-    };
-
-    html += `
-      <div class="card ${isActive ? "active" : ""}">
-        <div class="title">
-          <div class="name">${escapeHtml(p.name)} ${p.won ? "✅" : ""}</div>
-          <div class="pill">${diText} · ${outText}</div>
-        </div>
-
-        ${state.gameType === "x01"
-          ? `<div class="score">${p.score}</div>`
-          : `<div class="score">${p.cricket.points}</div>`
-        }
-
-        <div class="dartRow">
-          ${dBox(0)} ${dBox(1)} ${dBox(2)}
-        </div>
-
-        <div class="hint ${p.msg ? (p.msg.includes("WIN") ? "ok" : (p.msg.includes("BUST") ? "err" : "")) : ""}">
-          ${p.msg ? escapeHtml(p.msg) : "&nbsp;"}
-        </div>
-
-        ${renderPad(isActive, disabled)}
-
-        ${state.gameType === "x01" ? renderStats(p) : renderCricket(p)}
-      </div>
-    `;
-  });
-
-  $("game").innerHTML = html;
-}
-
-function renderPad(isActive, disabled){
-  const modeLabel = (m)=> m==="S"?"Single":(m==="D"?"Double":"Triple");
-  return `
-    <div class="pad">
-      <div class="modes">
-        <button class="modeBtn ${state.mode==="S"?"activeMode":""}" onclick="setMode('S')" ${disabled}>Single</button>
-        <button class="modeBtn ${state.mode==="D"?"activeMode":""}" onclick="setMode('D')" ${disabled}>Double</button>
-        <button class="modeBtn ${state.mode==="T"?"activeMode":""}" onclick="setMode('T')" ${disabled}>Triple</button>
-        <span class="pill">Aktiv: ${modeLabel(state.mode)} · Dart ${Math.min(state.dartIdx+1,3)}/3</span>
-      </div>
-
-      <div class="nums">
-        ${Array.from({length:20},(_,k)=>k+1).map(n=>`
-          <button onclick="pickNumber(${n})" ${disabled}>${n}</button>
-        `).join("")}
-      </div>
-
-      <div class="specials">
-        <button onclick="pickSpecial('25')" ${disabled}>25</button>
-        <button onclick="pickSpecial('BULL')" ${disabled}>BULL</button>
-        <button onclick="pickSpecial('MISS')" ${disabled}>MISS</button>
-      </div>
-
-      <div class="actions">
-        <button class="tiny" onclick="undoDart()" ${disabled}>← Dart zurück</button>
-        <button class="tiny" onclick="clearTurn()" ${disabled}>C</button>
-        <button onclick="submitTurn()" ${disabled}>OK</button>
-      </div>
-
-      <div class="hint">Pro-Logik: Nach jeder Eingabe springt der Modus automatisch zurück auf <b>Single</b>.</div>
-    </div>
-  `;
-}
-
-function renderStats(p){
-  const avg = (p.stats.avg3 || 0).toFixed(1);
-  return `
-    <div class="stats">
-      <div class="stat"><b>Average</b><span>${avg} pro 3 Darts</span></div>
-      <div class="stat"><b>Darts</b><span>${p.stats.darts}</span></div>
-      <div class="stat"><b>180s</b><span>${p.stats.s180}</span></div>
-      <div class="stat"><b>Best Finish</b><span>${p.stats.bestFinish}</span></div>
-    </div>
-  `;
-}
-
-function renderCricket(p){
-  const rows = CRICKET_TARGETS.map(t=>{
-    const m = p.cricket.marks[t] || 0;
-    const cls = m>=3 ? "closed" : (m>0 ? "open" : "");
-    const marksText = m>=3 ? "///" : (m===2 ? "//" : (m===1 ? "/" : "—"));
-    return `
-      <tr>
-        <td style="width:72px"><b>${t}</b></td>
-        <td class="marks ${cls}">${marksText} <span style="color:var(--muted);font-weight:400">(${m})</span></td>
-      </tr>
-    `;
-  }).join("");
-
-  return `
-    <div class="cricket">
-      <div class="pill" style="display:inline-block;margin-bottom:8px">Cricket Marks</div>
-      <table>
-        <thead><tr><th>Ziel</th><th>Marks</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div class="hint">Win: alle Ziele geschlossen + nicht weniger Punkte als alle Gegner.</div>
-    </div>
-  `;
-}
-
-/* =========================
-   Controls sync
-========================= */
-function syncControlsFromState(){
-  $("gameType").value = state.gameType;
-  $("startScore").value = String(state.startScore);
-  $("playerCount").value = String(state.playerCount);
-  $("doubleIn").value = String(state.doubleIn);
-  $("outMode").value = state.outMode;
-  $("autoOk").value = String(state.autoOk);
-  $("soundOn").value = String(state.soundOn);
-  applyGameTypeUiRules();
-}
-
-/* =========================
    Wire up
 ========================= */
 $("startBtn").addEventListener("click", startGame);
 $("randomStartBtn").addEventListener("click", randomStart);
-$("undoBtn").addEventListener("click", ()=>{ soundFor("undo"); undo(); });
+$("undoBtn").addEventListener("click", undo);
 
-$("gameType").addEventListener("change", ()=>{
-  saveState();
-  state.gameType = $("gameType").value;
-  applyGameTypeUiRules();
-  resetTurnInput();
-  setBanner(state.gameType==="cricket" ? "Cricket aktiv." : "X01 aktiv.");
-  render();
-});
+$("mS").addEventListener("click", ()=>setMode("S"));
+$("mD").addEventListener("click", ()=>setMode("D"));
+$("mT").addEventListener("click", ()=>setMode("T"));
+
+$("b25").addEventListener("click", ()=>pickSpecial("25"));
+$("bBull").addEventListener("click", ()=>pickSpecial("BULL"));
+$("bMiss").addEventListener("click", ()=>pickSpecial("MISS"));
+
+$("undoDartBtn").addEventListener("click", undoDart);
+$("clearBtn").addEventListener("click", clearTurn);
+$("okBtn").addEventListener("click", submitTurn);
 
 $("autoOk").addEventListener("change", ()=>{
   saveState();
-  state.autoOk = $("autoOk").value === "true";
-  render();
-});
-$("soundOn").addEventListener("change", ()=>{
-  saveState();
-  state.soundOn = $("soundOn").value === "true";
-  render();
+  state.autoOk = $("autoOk").value==="true";
+  renderRulesPill();
 });
 
-// init
+$("startScore").addEventListener("change", ()=>{/* only for new game */});
+$("playerCount").addEventListener("change", ()=>{/* only for new game */});
+$("doubleIn").addEventListener("change", ()=>{/* only for new game */});
+$("outMode").addEventListener("change", ()=>{/* only for new game */});
+
 startGame();
 </script>
 
