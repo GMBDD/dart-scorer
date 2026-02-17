@@ -32,7 +32,11 @@
   .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
   .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
 
-  /* Setup */
+  /* Setup: 2 Zeilen Controls */
+  .controls2{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .controlsLine{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+  .controlsGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
   .names{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .names input{width:180px;text-align:left}
 
@@ -85,7 +89,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 D</span>
+  <span class="ver">Build: 2026-02-17 E</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -102,44 +106,56 @@
         </div>
       </div>
 
-      <div class="row" style="margin-top:10px">
-        <div class="rowLeft">
-          <span>Start:</span>
-          <select id="startScore">
-            <option value="301" selected>301</option>
-            <option value="501">501</option>
-            <option value="701">701</option>
-            <option value="1001">1001</option>
-          </select>
+      <div class="controls2">
+        <!-- Zeile 1 -->
+        <div class="controlsLine">
+          <div class="controlsGroup">
+            <span>Start:</span>
+            <select id="startScore">
+              <option value="301" selected>301</option>
+              <option value="501">501</option>
+              <option value="701">701</option>
+              <option value="1001">1001</option>
+            </select>
 
-          <span>Spieler:</span>
-          <select id="playerCount">
-            <option>1</option><option selected>2</option><option>3</option>
-            <option>4</option><option>5</option><option>6</option>
-          </select>
+            <span>Spieler:</span>
+            <select id="playerCount">
+              <option>1</option><option selected>2</option><option>3</option>
+              <option>4</option><option>5</option><option>6</option>
+            </select>
 
-          <span>IN:</span>
-          <select id="doubleIn">
-            <option value="false" selected>AUS</option>
-            <option value="true">AN</option>
-          </select>
+            <span>OUT:</span>
+            <select id="outMode">
+              <option value="straight" selected>AUS</option>
+              <option value="double">AN</option>
+            </select>
+          </div>
 
-          <span>OUT:</span>
-          <select id="outMode">
-            <option value="straight" selected>AUS</option>
-            <option value="double">AN</option>
-          </select>
-
-          <span>Auto-OK:</span>
-          <select id="autoOk">
-            <option value="true" selected>AN</option>
-            <option value="false">AUS</option>
-          </select>
+          <div class="controlsGroup">
+            <span class="pill" id="starterInfo">Startspieler: 1</span>
+          </div>
         </div>
 
-        <div class="rowLeft">
-          <button id="randomStarterBtn">🎲 Startspieler</button>
-          <span class="pill" id="starterInfo">Startspieler: automatisch 1</span>
+        <!-- Zeile 2 -->
+        <div class="controlsLine">
+          <div class="controlsGroup">
+            <span>IN:</span>
+            <select id="doubleIn">
+              <option value="false" selected>AUS</option>
+              <option value="true">AN</option>
+            </select>
+
+            <span>Auto-OK:</span>
+            <select id="autoOk">
+              <option value="true" selected>AN</option>
+              <option value="false">AUS</option>
+            </select>
+          </div>
+
+          <div class="controlsGroup">
+            <button id="randomStarterBtn">🎲 Startspieler</button>
+            <button id="startGameBtn">Spiel starten</button>
+          </div>
         </div>
       </div>
 
@@ -147,11 +163,7 @@
       <div id="nameInputs" class="names"></div>
 
       <div class="hint">
-        Tipp: Namen eingeben → „Spiel starten“. Danach bist du im Scoring-Screen ohne Overlap.
-      </div>
-
-      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
-        <button id="startGameBtn">Spiel starten</button>
+        Setup → „Spiel starten“. Danach Scoring-Screen ohne Overlap.
       </div>
     </div>
   </div>
@@ -234,7 +246,6 @@
     return JSON.parse(JSON.stringify(obj));
   }
 
-  // ===== State =====
   let setup = {
     startScore: 301,
     playerCount: 2,
@@ -292,7 +303,6 @@
     renderAll();
   }
 
-  // ===== Screen switching =====
   function showSetup(){
     $("setupScreen").classList.remove("hidden");
     $("gameScreen").classList.add("hidden");
@@ -318,7 +328,6 @@
     renderAll();
   });
 
-  // ===== Setup UI =====
   function renderSetup(){
     $("startScore").value = String(setup.startScore);
     $("playerCount").value = String(setup.playerCount);
@@ -326,7 +335,6 @@
     $("outMode").value = setup.outMode;
     $("autoOk").value = String(setup.autoOk);
 
-    // Names
     const wrap = $("nameInputs");
     wrap.innerHTML = "";
     for(let i=0;i<setup.playerCount;i++){
@@ -351,25 +359,18 @@
     setup.outMode = $("outMode").value;
     setup.autoOk = $("autoOk").value==="true";
 
-    // ensure names array size
     const names = [];
     for(let i=0;i<setup.playerCount;i++){
       names.push(setup.names[i] ? setup.names[i] : `Spieler ${i+1}`);
     }
     setup.names = names;
 
-    // starter valid
     if(setup.starter >= setup.playerCount) setup.starter = 0;
   }
 
-  $("playerCount").addEventListener("change", ()=>{
-    readSetupFromControls();
-    renderSetup();
+  ["playerCount","startScore","doubleIn","outMode","autoOk"].forEach(id=>{
+    $(id).addEventListener("change", ()=>{ readSetupFromControls(); renderSetup(); });
   });
-  $("startScore").addEventListener("change", ()=>{ readSetupFromControls(); renderSetup(); });
-  $("doubleIn").addEventListener("change", ()=>{ readSetupFromControls(); renderSetup(); });
-  $("outMode").addEventListener("change", ()=>{ readSetupFromControls(); renderSetup(); });
-  $("autoOk").addEventListener("change", ()=>{ readSetupFromControls(); renderSetup(); });
 
   $("randomStarterBtn").addEventListener("click", ()=>{
     readSetupFromControls();
@@ -377,7 +378,6 @@
     $("starterInfo").textContent = `Startspieler: ${setup.starter+1}`;
   });
 
-  // ===== Start Game =====
   function startNewGame(){
     readSetupFromControls();
     game.players = [];
@@ -395,6 +395,7 @@
   }
 
   $("startGameBtn").addEventListener("click", startNewGame);
+
   $("newBtn").addEventListener("click", ()=>{
     if(confirm("Neues Spiel starten? (aktueller Stand geht verloren)")){
       showSetup();
@@ -402,7 +403,6 @@
     }
   });
 
-  // ===== Scoring Logic =====
   function ensureActive(){
     const p = game.players[game.current];
     return p && !p.won;
@@ -438,8 +438,7 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    // reset to single after each input
-    game.mode = "S";
+    game.mode = "S"; // reset to single
 
     renderInput();
     renderMode();
@@ -487,11 +486,9 @@
     const p = game.players[game.current];
     p.msg="";
 
-    // fill missing
     const turn = game.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
     const effective = clone(turn);
 
-    // Double-IN: first counting dart must be a double
     if(setup.doubleIn && !p.opened){
       const idx = effective.findIndex(d=>d.isDouble && d.points>0);
       if(idx===-1){
@@ -507,7 +504,6 @@
     const total = effective[0].points + effective[1].points + effective[2].points;
     const newScore = p.score - total;
 
-    // Bust
     if(newScore < 0 || (setup.outMode==="double" && newScore===1)){
       p.msg="BUST";
       nextPlayer();
@@ -515,7 +511,6 @@
       return;
     }
 
-    // Checkout
     if(newScore===0){
       if(setup.outMode==="double"){
         const last = effective[2];
@@ -540,7 +535,6 @@
     renderAll();
   }
 
-  // ===== Render Scoring =====
   function renderRules(){
     const inTxt = setup.doubleIn ? "IN AN" : "IN AUS";
     const outTxt = (setup.outMode==="double") ? "OUT AN" : "OUT AUS";
@@ -593,7 +587,6 @@
     if(m.includes("BUST")) msg.classList.add("bad");
     msg.textContent = m ? m : " ";
 
-    // disable if someone won and only winners left (edge)
     const disable = !ensureActive();
     document.querySelectorAll("#gameScreen button").forEach(btn=>{
       if(btn.id==="newBtn") return;
@@ -615,7 +608,6 @@
     renderMode();
   }
 
-  // buttons
   $("undoBtn").addEventListener("click", undo);
   $("undoDartBtn").addEventListener("click", undoDart);
   $("clearBtn").addEventListener("click", clearTurn);
@@ -629,7 +621,6 @@
   $("bBull").addEventListener("click", ()=>pickSpecial("BULL"));
   $("bMiss").addEventListener("click", ()=>pickSpecial("MISS"));
 
-  // build numbers 1-20 once
   const nums = $("nums");
   for(let n=1;n<=20;n++){
     const b=document.createElement("button");
