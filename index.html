@@ -7,13 +7,7 @@
 <style>
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
-    --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
-
-    /* functional button feel */
-    --btn-border:#2f2f3a;
-    --btn-hover:#1a1a22;
-    --btn-press:#242432;
-    --btn-glow:rgba(255,255,255,0.08);
+    --btn:#121218; --btn2:#1c1c24; --accent:#4da3ff; --ok:#bfffc0; --bad:#ffb3b3;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -24,26 +18,38 @@
   }
   header strong{font-size:16px}
   .ver{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
-  button,select,input{
-    padding:10px 14px;font-size:16px;border-radius:12px;border:1px solid var(--line);
-    background:var(--btn);color:var(--text);
-  }
+
+  /* ===== BUTTONS (leicht farbiger Rand + stärker beim Drücken) ===== */
   button{
+    padding:10px 14px;
+    font-size:16px;
     cursor:pointer;
-    border:1px solid var(--btn-border);
-    transition:all .12s ease;
-    box-shadow:0 0 0 1px transparent;
+    border-radius:12px;
+    border:1px solid rgba(77,163,255,0.35); /* leicht farbig */
+    background: var(--btn);
+    color: var(--text);
+    transition: border-color .12s ease, box-shadow .12s ease, transform .06s ease, background .12s ease;
   }
   button:hover{
-    background:var(--btn-hover);
-    border-color:#3a3a48;
+    border-color: rgba(77,163,255,0.65);
   }
   button:active{
-    background:var(--btn-press);
-    transform:scale(0.97);
-    box-shadow:0 0 0 2px var(--btn-glow) inset;
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(77,163,255,0.7);
+    transform: scale(0.98);
   }
-  button:disabled{opacity:.45;cursor:default}
+  button:disabled{opacity:.45;cursor:default;box-shadow:none;transform:none}
+
+  select,input{
+    padding:9px 10px;
+    font-size:16px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#121218;
+    color:var(--text);
+    text-align:center;
+  }
+
   .wrap{max-width:1100px;margin:0 auto;padding:14px}
   .grid{display:grid;gap:12px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
@@ -51,6 +57,7 @@
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
   .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
+  .hidden{display:none !important;}
 
   /* Setup controls */
   .controls2{display:flex;flex-direction:column;gap:10px;margin-top:10px}
@@ -59,7 +66,7 @@
   .names{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .names input{width:180px;text-align:left}
 
-  /* Scoring */
+  /* Score overview */
   .scoreTop{
     max-height:220px; overflow:auto; border-radius:14px; border:1px solid var(--line);
     background:#101016; padding:8px;
@@ -69,12 +76,13 @@
     padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;
     background:#0f0f14;
   }
-  .playerItem.active{outline:2px solid var(--accent)}
+  .playerItem.active{outline:2px solid rgba(77,163,255,0.65)}
   .playerItem.win{opacity:.65}
   .pName{font-weight:900}
   .pMeta{font-size:12px;color:var(--muted);margin-top:2px}
   .pScore{font-size:28px;font-weight:950;min-width:70px;text-align:right}
 
+  /* Input panel */
   .bigScore{font-size:48px;font-weight:950;text-align:center;margin:14px 0 6px}
   .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .dartBox{
@@ -88,18 +96,15 @@
 
   .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .modeBtn{background:var(--btn2)}
-  .modeBtn.active{outline:2px solid var(--accent)}
+  .modeBtn.active{outline:2px solid rgba(77,163,255,0.65)}
 
-  .nums{display:grid;gap:12px;grid-template-columns:repeat(5,1fr);max-width:560px;margin:0 auto 10px}
-  /* minimal größer */
-  .nums button{padding:16px 0;font-size:20px;border-radius:16px}
-  .specials{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
-  .specials button{padding:14px 18px;font-size:18px;border-radius:16px}
+  .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
+  .nums button{padding:12px 0}
+  .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
 
   /* Bottom actions: only Undo + OK */
-  .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px}
-  .actions button{min-width:160px;padding:14px 18px;font-size:18px;border-radius:16px}
-  .hidden{display:none !important;}
+  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .actions button{min-width:140px}
 
   @media (max-width: 980px){
     .nums{grid-template-columns:repeat(4,1fr)}
@@ -112,7 +117,6 @@
 <header>
   <strong>🎯 Darts Scoring</strong>
   <span class="ver">Build: 2026-02-17 J</span>
-
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
 </header>
@@ -434,7 +438,6 @@
     showGame();
     renderAll();
   }
-
   $("startGameBtn").addEventListener("click", startNewGame);
 
   $("newBtn").addEventListener("click", ()=>{
@@ -471,7 +474,7 @@
     renderHeader();
   }
 
-  // ===== LIVE Remaining (DI berücksichtigt) =====
+  // ===== LIVE Remaining (IN/OUT berücksichtigt) =====
   function computeEffectiveDartsForCurrent(){
     const p = game.players[game.current];
     const filled = game.darts.map(d => d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
@@ -491,7 +494,6 @@
   function getLiveRemaining(){
     const p = game.players[game.current];
     if(!p) return setup.startScore;
-
     const effective = computeEffectiveDartsForCurrent();
     const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
     return p.score - subtotal;
@@ -505,7 +507,7 @@
     const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
     const remaining = p.score - subtotal;
 
-    // Bust sofort
+    // Bust sofort beenden
     if(remaining < 0 || (setup.outMode==="double" && remaining === 1)){
       p.msg = "BUST";
       nextPlayer();
@@ -513,7 +515,7 @@
       return;
     }
 
-    // Checkout sofort
+    // Checkout sofort beenden
     if(remaining === 0){
       if(setup.outMode === "double"){
         const lastIdx = Math.max(0, game.dartIdx - 1);
@@ -525,11 +527,11 @@
           return;
         }
       }
+      // falls IN jetzt geöffnet wurde
       if(setup.doubleIn && !p.opened){
         const idx = effective.findIndex(d=>d.isDouble && d.points>0);
         if(idx !== -1) p.opened = true;
       }
-
       p.score = 0;
       p.won = true;
       p.msg = "WIN ✅";
@@ -538,6 +540,7 @@
       return;
     }
 
+    // nur UI aktualisieren (Rest live)
     renderHeader();
     renderInput();
   }
@@ -550,21 +553,19 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    // always reset to single
+    // immer zurück auf Single
     game.mode = "S";
 
     renderInput();
     renderMode();
     renderHeader();
 
-    // Live evaluation
+    // LIVE Prüfung nach jedem Pfeil
     evaluateAfterEachDart();
 
-    // Auto-OK if still same turn
-    if(ensureActive() && game.dartIdx===3){
-      if(setup.autoOk){
-        setTimeout(()=>{ if(ensureActive() && game.dartIdx===3) submitTurn(); }, 120);
-      }
+    // Auto-OK nach 3 Darts (wenn Turn nicht schon beendet wurde)
+    if(ensureActive() && game.dartIdx===3 && setup.autoOk){
+      setTimeout(()=>{ if(ensureActive() && game.dartIdx===3) submitTurn(); }, 120);
     }
   }
 
@@ -664,7 +665,10 @@
   function renderHeader(){
     const p = game.players[game.current];
     $("currentName").textContent = p ? p.name : "—";
-    $("currentScore").textContent = p ? getLiveRemaining() : "—";
+
+    // LIVE Remaining:
+    const live = p ? getLiveRemaining() : "—";
+    $("currentScore").textContent = live;
 
     const inTxt = setup.doubleIn ? (p.opened ? "IN: open" : "IN: closed") : "IN: aus";
     const outTxt = (setup.outMode==="double") ? "OUT: double" : "OUT: straight";
@@ -711,6 +715,7 @@
     renderMode();
   }
 
+  // Buttons
   $("undoBtn").addEventListener("click", undo);
   $("okBtn").addEventListener("click", submitTurn);
 
@@ -722,6 +727,7 @@
   $("bBull").addEventListener("click", ()=>pickSpecial("BULL"));
   $("bMiss").addEventListener("click", ()=>pickSpecial("MISS"));
 
+  // Zahlen 1-20
   const nums = $("nums");
   for(let n=1;n<=20;n++){
     const b=document.createElement("button");
