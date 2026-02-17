@@ -173,6 +173,7 @@
   <div class="hint" style="padding:0 6px 14px">
     Eingabe: <b>Single/Double/Triple</b> wählen → Zahl klicken (1–20) oder 25/BULL/MISS.
     <br>Cricket: Triple=3 Marks, Double=2 Marks, Single=1 Mark.
+    <br><b>Pro-Logik:</b> Nach jeder Eingabe springt der Modus automatisch zurück auf <b>Single</b>.
   </div>
 </div>
 
@@ -266,7 +267,6 @@ function beep(freq=660, ms=70, gain=0.05){
   }catch(e){}
 }
 function soundFor(type){
-  // type: "click","bust","win","undo"
   if(type==="click") beep(720,60,0.04);
   if(type==="bust") beep(240,120,0.06);
   if(type==="win"){ beep(880,90,0.06); setTimeout(()=>beep(660,110,0.06),110); }
@@ -297,14 +297,12 @@ function newPlayer(name, startScore){
     // Cricket
     cricket: {
       points: 0,
-      // marks per target: 20,19,18,17,16,15,BULL
       marks: { "20":0,"19":0,"18":0,"17":0,"16":0,"15":0,"BULL":0 }
     }
   };
 }
 
 function startGame(){
-  // read controls
   state.gameType = $("gameType").value;
   state.startScore = parseInt($("startScore").value, 10);
   state.playerCount = parseInt($("playerCount").value, 10);
@@ -346,9 +344,8 @@ function renderNames(){
     inp.value = p.name.startsWith("Spieler ") ? "" : p.name;
     inp.placeholder = p.name;
     inp.addEventListener("input", ()=>{
-      // live update names, no saveState spam -> save only on blur
       p.name = inp.value.trim() ? inp.value.trim() : `Spieler ${i+1}`;
-      renderBanner(); // keeps banner readable
+      renderBanner();
       render();
     });
     inp.addEventListener("blur", ()=>{
@@ -414,13 +411,14 @@ function pushDart(obj){
   state.darts[state.dartIdx] = obj;
   state.dartIdx++;
 
+  // ✅ PRO-ÄNDERUNG: nach jeder Eingabe automatisch zurück auf Single
+  state.mode = "S";
+
   soundFor("click");
   render();
 
   if(state.autoOk && state.dartIdx === 3){
-    // tiny delay so user sees 3rd dart appear
     setTimeout(()=>{
-      // still 3? (in case undo)
       if(state.dartIdx === 3) submitTurn();
     }, 120);
   }
@@ -429,12 +427,6 @@ function pushDart(obj){
 function pickNumber(n){
   if(!ensureActive()) return;
   if(state.dartIdx > 2) return;
-
-  if(state.gameType === "cricket"){
-    // Cricket accepts only 15-20 + Bull for marks scoring
-    // But we still allow 1-20 as keypad; only 15-20 are relevant
-    // 25 -> Bull marks handled by special buttons.
-  }
 
   let mult = state.mode; // S/D/T
   let points = n;
@@ -454,7 +446,7 @@ function pickSpecial(type){
 
   if(type==="MISS") return pushDart({ label:"0", points:0, isDouble:false, isTriple:false, raw:{type:"miss"} });
   if(type==="25") return pushDart({ label:"25", points:25, isDouble:false, isTriple:false, raw:{type:"25"} });
-  if(type==="BULL") return pushDart({ label:"BULL", points:50, isDouble:true, isTriple:false, raw:{type:"bull"} }); // counts as double
+  if(type==="BULL") return pushDart({ label:"BULL", points:50, isDouble:true, isTriple:false, raw:{type:"bull"} });
 }
 
 function undoDart(){
@@ -507,16 +499,14 @@ function submitTurn(){
   submitTurnCricket(p, turn);
 }
 
-function updateX01Stats(p, turnTotal, turnDarts){
-  p.stats.darts += 3; // we count a "visit" as 3 darts, even if user used fewer (common scoring behavior)
+function updateX01Stats(p, turnTotal){
+  p.stats.darts += 3;
   p.stats.scored += turnTotal;
   p.stats.avg3 = p.stats.darts ? (p.stats.scored / p.stats.darts) * 3 : 0;
-
   if(turnTotal === 180) p.stats.s180 += 1;
 }
 
 function submitTurnX01(p, turn){
-  // Double-In: open only when a double is hit; darts before opening do not count
   let effectiveTurn = deepCopy(turn);
 
   if(!p.opened && state.doubleIn){
@@ -524,8 +514,7 @@ function submitTurnX01(p, turn){
     if(idx === -1){
       p.msg = "Kein Double-In → nichts zählt";
       soundFor("bust");
-      // stats: still count 3 darts thrown (realistic); but scored 0
-      updateX01Stats(p, 0, effectiveTurn);
+      updateX01Stats(p, 0);
       nextPlayer();
       render();
       return;
@@ -537,23 +526,22 @@ function submitTurnX01(p, turn){
   const total = effectiveTurn[0].points + effectiveTurn[1].points + effectiveTurn[2].points;
   const newScore = p.score - total;
 
-  // Bust rules
-  if(newScore < 0 || (state.outMode === "double" && newScore === 1) || (state.outMode === "master" && newScore === 1)){
+  if(newScore < 0 || (state.outMode !== "straight" && newScore === 1)){
     p.msg = "BUST";
     soundFor("bust");
-    updateX01Stats(p, 0, effectiveTurn);
+    updateX01Stats(p, 0);
     nextPlayer();
     render();
     return;
   }
 
-  // Checkout
   if(newScore === 0){
     const last = effectiveTurn[2];
+
     if(state.outMode === "double" && !(last.isDouble && last.points > 0)){
       p.msg = "BUST (kein Double-Finish)";
       soundFor("bust");
-      updateX01Stats(p, 0, effectiveTurn);
+      updateX01Stats(p, 0);
       nextPlayer();
       render();
       return;
@@ -561,21 +549,20 @@ function submitTurnX01(p, turn){
     if(state.outMode === "master" && !((last.isDouble && last.points>0) || (last.isTriple && last.points>0))){
       p.msg = "BUST (kein Master-Finish)";
       soundFor("bust");
-      updateX01Stats(p, 0, effectiveTurn);
+      updateX01Stats(p, 0);
       nextPlayer();
       render();
       return;
     }
 
-    // win
-    const finishValue = p.score; // remaining before this visit
+    const finishValue = p.score;
     p.stats.bestFinish = Math.max(p.stats.bestFinish, finishValue);
 
     p.score = 0;
     p.won = true;
     p.msg = "WIN ✅";
     soundFor("win");
-    updateX01Stats(p, total, effectiveTurn);
+    updateX01Stats(p, total);
 
     setBanner(`${p.name} gewinnt! (Finish ${finishValue})`);
     nextPlayer();
@@ -583,10 +570,9 @@ function submitTurnX01(p, turn){
     return;
   }
 
-  // Normal
   p.score = newScore;
   p.msg = total>0 ? `−${total}` : "";
-  updateX01Stats(p, total, effectiveTurn);
+  updateX01Stats(p, total);
 
   nextPlayer();
   render();
@@ -596,15 +582,12 @@ function submitTurnX01(p, turn){
 const CRICKET_TARGETS = ["20","19","18","17","16","15","BULL"];
 
 function marksForDart(d){
-  // number 15-20 -> single=1, double=2, triple=3
-  // bull = 50 -> counts as 1 mark (common), we treat BULL as 1 mark; 25 as 0 (optional)
-  // To keep it simple and usable: BULL=1 mark, 25=0 mark
   if(d.raw?.type === "bull") return {target:"BULL", marks:1};
   if(d.raw?.type === "25") return {target:null, marks:0};
   if(d.raw?.type === "number"){
     const n = d.raw.n;
     if(n >= 15 && n <= 20){
-      const mult = d.raw.mult; // S/D/T
+      const mult = d.raw.mult;
       const m = (mult==="T") ? 3 : (mult==="D") ? 2 : 1;
       return {target:String(n), marks:m};
     }
@@ -617,11 +600,7 @@ function isClosed(player, target){
 }
 
 function submitTurnCricket(p, turn){
-  // Cricket: apply marks + points
-  // scoring: if player already closed target, extra marks score points (target value * extra marks)
-  // but only if at least one opponent is not closed on that target.
   const opponents = state.players.filter(x => x !== p);
-
   let pointsGained = 0;
 
   for(const d of turn){
@@ -631,17 +610,15 @@ function submitTurnCricket(p, turn){
     const before = p.cricket.marks[target] || 0;
     const after = before + marks;
 
-    // if target is "open" in opponents (not all closed)
     const someoneOpen = opponents.some(o => !isClosed(o, target));
 
     if(someoneOpen){
-      // marks used to close do not score, only over-marks beyond 3 score
       const beforeOver = Math.max(0, before - 3);
       const afterOver = Math.max(0, after - 3);
       const newOver = afterOver - beforeOver;
 
       if(newOver > 0){
-        if(target === "BULL") pointsGained += 25 * newOver; // treat bull as 25 for points
+        if(target === "BULL") pointsGained += 25 * newOver;
         else pointsGained += parseInt(target,10) * newOver;
       }
     }
@@ -651,7 +628,6 @@ function submitTurnCricket(p, turn){
 
   p.cricket.points += pointsGained;
 
-  // win condition (common): all closed AND points >= all opponents points
   const allClosed = CRICKET_TARGETS.every(t => isClosed(p, t));
   const leadingOrTied = opponents.every(o => p.cricket.points >= o.cricket.points);
 
@@ -757,7 +733,7 @@ function renderPad(isActive, disabled){
         <button onclick="submitTurn()" ${disabled}>OK</button>
       </div>
 
-      <div class="hint">Für 25/BULL wird Single/Double/Triple ignoriert (25=25, BULL=50).</div>
+      <div class="hint">Pro-Logik: Nach jeder Eingabe springt der Modus automatisch zurück auf <b>Single</b>.</div>
     </div>
   `;
 }
@@ -824,16 +800,11 @@ $("gameType").addEventListener("change", ()=>{
   saveState();
   state.gameType = $("gameType").value;
   applyGameTypeUiRules();
-  // if switching modes mid-game, keep state but reset turn input
   resetTurnInput();
   setBanner(state.gameType==="cricket" ? "Cricket aktiv." : "X01 aktiv.");
   render();
 });
 
-$("startScore").addEventListener("change", ()=>{ /* only used on new game */ });
-$("playerCount").addEventListener("change", ()=>{ /* only used on new game */ });
-$("doubleIn").addEventListener("change", ()=>{ /* only used on new game */ });
-$("outMode").addEventListener("change", ()=>{ /* only used on new game */ });
 $("autoOk").addEventListener("change", ()=>{
   saveState();
   state.autoOk = $("autoOk").value === "true";
