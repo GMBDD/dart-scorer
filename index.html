@@ -116,7 +116,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 J</span>
+  <span class="ver">Build: 2026-02-17 K</span>
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
 </header>
@@ -159,13 +159,13 @@
             <span>IN:</span>
             <select id="doubleIn">
               <option value="false" selected>AUS</option>
-              <option value="true">AN</option>
+              <option value="true">DOUBLE</option>
             </select>
 
             <span>OUT:</span>
             <select id="outMode">
               <option value="straight" selected>AUS</option>
-              <option value="double">AN</option>
+              <option value="double">DOUBLE</option>
             </select>
           </div>
         </div>
@@ -639,8 +639,8 @@
   }
 
   function renderRules(){
-    const inTxt = setup.doubleIn ? "IN AN" : "IN AUS";
-    const outTxt = (setup.outMode==="double") ? "OUT AN" : "OUT AUS";
+    const inTxt = setup.doubleIn ? "IN DOUBLE" : "IN AUS";
+    const outTxt = (setup.outMode==="double") ? "OUT DOUBLE" : "OUT AUS";
     $("rulesPill").textContent = `${setup.startScore} · ${inTxt} · ${outTxt} · Auto-OK ${setup.autoOk ? "AN":"AUS"}`;
   }
 
@@ -650,7 +650,11 @@
     game.players.forEach((p,i)=>{
       const div = document.createElement("div");
       div.className = "playerItem" + (i===game.current && !p.won ? " active":"") + (p.won ? " win":"");
-      const inState = setup.doubleIn ? (p.opened ? "open" : "closed") : "aus";
+
+      const inState = setup.doubleIn
+        ? `DOUBLE (${p.opened ? "offen" : "zu"})`
+        : "AUS";
+
       div.innerHTML = `
         <div style="min-width:0">
           <div class="pName">${esc(p.name)} ${p.won?"✅":""}</div>
@@ -670,9 +674,16 @@
     const live = p ? getLiveRemaining() : "—";
     $("currentScore").textContent = live;
 
-    const inTxt = setup.doubleIn ? (p.opened ? "IN: open" : "IN: closed") : "IN: aus";
-    const outTxt = (setup.outMode==="double") ? "OUT: double" : "OUT: straight";
+    const inTxt = setup.doubleIn
+      ? `IN: DOUBLE (${p.opened ? "offen" : "zu"})`
+      : "IN: AUS";
+
+    const outTxt = (setup.outMode==="double")
+      ? "OUT: DOUBLE"
+      : "OUT: AUS";
+
     $("diState").textContent = `${inTxt} · ${outTxt}`;
+
     $("modeInfo").textContent =
       `Modus: ${game.mode==="S"?"Single":game.mode==="D"?"Double":"Triple"} · Dart ${Math.min(game.dartIdx+1,3)}/3`;
   }
