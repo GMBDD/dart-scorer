@@ -106,32 +106,65 @@
         </div>
       </div>
 
-      <div class="controls2">
-        <!-- Zeile 1 -->
-        <div class="controlsLine">
-          <div class="controlsGroup">
-            <span>Start:</span>
-            <select id="startScore">
-              <option value="301" selected>301</option>
-              <option value="501">501</option>
-              <option value="701">701</option>
-              <option value="1001">1001</option>
-            </select>
+      <<div class="controls2">
 
-            <span>Spieler:</span>
-            <select id="playerCount">
-              <option>1</option><option selected>2</option><option>3</option>
-              <option>4</option><option>5</option><option>6</option>
-            </select>
+  <!-- Zeile 1 -->
+  <div class="controlsLine">
+    <div class="controlsGroup">
+      <span>Start:</span>
+      <select id="startScore">
+        <option value="301" selected>301</option>
+        <option value="501">501</option>
+        <option value="701">701</option>
+        <option value="1001">1001</option>
+      </select>
 
-            <span>OUT:</span>
-            <select id="outMode">
-              <option value="straight" selected>AUS</option>
-              <option value="double">AN</option>
-            </select>
-          </div>
-        </div>
+      <span>Spieler:</span>
+      <select id="playerCount">
+        <option>1</option><option selected>2</option><option>3</option>
+        <option>4</option><option>5</option><option>6</option>
+      </select>
+    </div>
+  </div>
 
+  <!-- Zeile 2 -->
+  <div class="controlsLine">
+    <div class="controlsGroup">
+      <span>IN:</span>
+      <select id="doubleIn">
+        <option value="false" selected>AUS</option>
+        <option value="true">AN</option>
+      </select>
+
+      <span>OUT:</span>
+      <select id="outMode">
+        <option value="straight" selected>AUS</option>
+        <option value="double">AN</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Zeile 3 -->
+  <div class="controlsLine">
+    <div class="controlsGroup">
+      <span>Auto-OK:</span>
+      <select id="autoOk">
+        <option value="true" selected>AN</option>
+        <option value="false">AUS</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="controlsLine">
+    <div class="controlsGroup">
+      <button id="randomStarterBtn">🎲 Startspieler</button>
+      <span class="pill" id="starterInfo">Startspieler: Spieler 1</span>
+      <button id="startGameBtn">Spiel starten</button>
+    </div>
+  </div>
+
+      </div>
         <!-- Zeile 2 -->
         <div class="controlsLine">
           <div class="controlsGroup">
