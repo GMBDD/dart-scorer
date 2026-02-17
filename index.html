@@ -25,7 +25,11 @@
   button:disabled{opacity:.45;cursor:default}
   select{padding:9px 10px}
 
-  .wrap{max-width:1200px;margin:0 auto;padding:14px}
+  .wrap{
+    max-width:1200px;margin:0 auto;padding:14px;
+    /* WICHTIG: Platz für das Panel unten – gilt jetzt immer */
+    padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
+  }
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
 
   .banner{display:none;margin-bottom:12px}
@@ -98,22 +102,23 @@
   .tiny{font-size:12px;padding:8px 10px}
   .toggleBtn{background:var(--btn2)}
 
-  /* ✅ Mobile: garantiert oberste Ebene + einklappbar */
-  @media (max-width: 980px){
-    .layout{grid-template-columns: 1fr}
+  /* ✅ Collapse-Regeln gelten IMMER (damit Toggle garantiert wirkt) */
+  .keypadCard.collapsed{
+    max-height: 150px !important;
+    overflow: hidden !important;
+  }
 
-    /* Content bewusst "unter" das Panel legen */
+  /* ✅ “Panel immer fixed” für Touch-Geräte ODER kleinere Breiten
+     (GitHub/Android rendert manchmal Desktop-Breite -> max-width allein reicht nicht)
+  */
+  @media (pointer: coarse), (max-width: 1400px){
+    /* Content bewusst unter das Panel */
     .wrap, header, .card, .layout{
       position: relative;
       z-index: 1;
     }
 
-    /* Platz für Panel unten (wird per JS mit --panelSpace gesetzt) */
-    .wrap{
-      padding-bottom: calc(var(--panelSpace) + env(safe-area-inset-bottom, 0px));
-    }
-
-    /* PANEL: garantiert oberste Ebene */
+    /* PANEL: garantiert oberste Ebene, fixed, bleibt beim Scrollen */
     .keypadCard{
       position: fixed !important;
       left: 0;
@@ -131,11 +136,6 @@
       max-height: 420px;
       overflow-y: auto;
       background: var(--card);
-    }
-
-    .keypadCard.collapsed{
-      max-height: 150px;
-      overflow: hidden;
     }
 
     .nums{grid-template-columns:repeat(4,1fr)}
@@ -213,7 +213,7 @@
       </div>
 
       <div id="playerList" class="playerList"></div>
-      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel (stabil, ohne Absturz).</div>
+      <div class="hint">Undo funktioniert auch nach OK & Spielerwechsel (stabil).</div>
     </div>
 
     <!-- Eingabe-Panel -->
@@ -234,7 +234,6 @@
 
       <div class="bigScore" id="currentScore">—</div>
 
-      <!-- Dart-Anzeige bleibt auch im eingeklappten Zustand sichtbar -->
       <div class="dartRow">
         <div class="dartBox" id="d0">—<small>&nbsp;</small></div>
         <div class="dartBox" id="d1">—<small>&nbsp;</small></div>
@@ -243,7 +242,6 @@
 
       <div id="msg" class="msg">&nbsp;</div>
 
-      <!-- Alles darunter wird beim Collapse ausgeblendet -->
       <div id="panelBody">
         <div class="modes">
           <button class="modeBtn" id="mS" type="button">Single</button>
@@ -272,27 +270,21 @@
       </div>
     </div>
   </div>
-
-  <div class="hint" style="padding:0 6px 14px">
-    Mobile: Panel bleibt vorne. Mit ▾/▴ kannst du einklappen/ausklappen, damit du Übersicht UND Eingabe sauber siehst.
-  </div>
 </div>
 
 <script>
 const $ = (id)=>document.getElementById(id);
 
-/* ========= Safe clone ========= */
 function clone(obj){
   if (typeof structuredClone === "function") return structuredClone(obj);
   return JSON.parse(JSON.stringify(obj));
 }
 
-/* ========= State ========= */
 let state = {
   startScore: 301,
   playerCount: 2,
   doubleIn: false,
-  outMode: "straight",  // OUT AUS = straight, OUT AN = double
+  outMode: "straight",
   autoOk: true,
 
   players: [],
@@ -303,7 +295,7 @@ let state = {
   dartIdx: 0,
 
   banner: "",
-  history: [] // snapshots only, no recursion
+  history: []
 };
 
 function newPlayer(name){
@@ -317,7 +309,7 @@ function newPlayer(name){
   };
 }
 
-/* ========= Undo (stabil) ========= */
+/* Undo stabil */
 const HISTORY_LIMIT = 120;
 
 function snapshot(){
@@ -369,7 +361,7 @@ function undo(){
   renderAll();
 }
 
-/* ========= Panel collapse/expand ========= */
+/* Panel toggle */
 let panelCollapsed = false;
 
 function applyPanelState(){
@@ -391,7 +383,7 @@ function togglePanel(){
   applyPanelState();
 }
 
-/* ========= Game ========= */
+/* Game */
 function resetTurn(){
   state.mode="S";
   state.darts=[null,null,null];
@@ -457,7 +449,7 @@ function pushDart(obj){
   state.darts[state.dartIdx]=obj;
   state.dartIdx++;
 
-  state.mode="S"; // reset to Single
+  state.mode="S";
 
   renderKeypad();
   renderModeButtons();
@@ -528,7 +520,6 @@ function submitTurn(){
   const turn = state.darts.map(d=>d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
   const effective = clone(turn);
 
-  // IN (Double-In)
   if(!p.opened && state.doubleIn){
     const idx = effective.findIndex(d=>d.isDouble && d.points>0);
     if(idx===-1){
@@ -587,7 +578,7 @@ function submitTurn(){
   renderAll();
 }
 
-/* ========= Render ========= */
+/* Render */
 function renderAll(){
   renderBanner();
   renderRulesPill();
@@ -707,7 +698,7 @@ function renderKeypad(){
 
   const disable = !ensureActive();
   document.querySelectorAll("#keypadCard button").forEach(btn=>{
-    if (btn.id === "togglePanelBtn") return; // toggle immer erlaubt
+    if (btn.id === "togglePanelBtn") return;
     btn.disabled = disable;
   });
 }
@@ -727,7 +718,7 @@ function escapeHtml(s){
     .replaceAll("'","&#039;");
 }
 
-/* ========= Wire up ========= */
+/* Wire up */
 $("startBtn").addEventListener("click", startGame);
 $("randomStartBtn").addEventListener("click", randomStart);
 $("undoBtn").addEventListener("click", undo);
@@ -746,27 +737,25 @@ $("undoDartBtn").addEventListener("click", undoDart);
 $("clearBtn").addEventListener("click", clearTurn);
 $("okBtn").addEventListener("click", submitTurn);
 
-// Auto-OK live umschaltbar
 $("autoOk").addEventListener("change", ()=>{
   saveState();
   state.autoOk = $("autoOk").value==="true";
   renderRulesPill();
 });
 
-// Defaults (falls Browser cached)
+// Defaults
 $("startScore").value = "301";
 $("playerCount").value = "2";
 $("doubleIn").value = "false";
 $("outMode").value = "straight";
 $("autoOk").value = "true";
 
-// Panel-State aus LocalStorage
+// Panel-State laden
 try{
   panelCollapsed = localStorage.getItem("darts_panel_collapsed") === "1";
 }catch(e){
   panelCollapsed = false;
 }
-
 window.addEventListener("resize", applyPanelState);
 
 // Start
