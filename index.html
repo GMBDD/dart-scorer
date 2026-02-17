@@ -32,7 +32,7 @@
   .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
   .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
 
-  /* Setup: 2 Zeilen Controls */
+  /* Setup controls */
   .controls2{display:flex;flex-direction:column;gap:10px;margin-top:10px}
   .controlsLine{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
   .controlsGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -89,7 +89,7 @@
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="ver">Build: 2026-02-17 F</span>
+  <span class="ver">Build: 2026-02-17 G</span>
 
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
@@ -106,65 +106,32 @@
         </div>
       </div>
 
-      <<div class="controls2">
+      <!-- Wunschlayout:
+           Zeile 1: Start + Spieler
+           Zeile 2: IN + OUT
+           Zeile 3: Auto-OK
+      -->
+      <div class="controls2">
 
-  <!-- Zeile 1 -->
-  <div class="controlsLine">
-    <div class="controlsGroup">
-      <span>Start:</span>
-      <select id="startScore">
-        <option value="301" selected>301</option>
-        <option value="501">501</option>
-        <option value="701">701</option>
-        <option value="1001">1001</option>
-      </select>
+        <!-- Zeile 1 -->
+        <div class="controlsLine">
+          <div class="controlsGroup">
+            <span>Start:</span>
+            <select id="startScore">
+              <option value="301" selected>301</option>
+              <option value="501">501</option>
+              <option value="701">701</option>
+              <option value="1001">1001</option>
+            </select>
 
-      <span>Spieler:</span>
-      <select id="playerCount">
-        <option>1</option><option selected>2</option><option>3</option>
-        <option>4</option><option>5</option><option>6</option>
-      </select>
-    </div>
-  </div>
+            <span>Spieler:</span>
+            <select id="playerCount">
+              <option>1</option><option selected>2</option><option>3</option>
+              <option>4</option><option>5</option><option>6</option>
+            </select>
+          </div>
+        </div>
 
-  <!-- Zeile 2 -->
-  <div class="controlsLine">
-    <div class="controlsGroup">
-      <span>IN:</span>
-      <select id="doubleIn">
-        <option value="false" selected>AUS</option>
-        <option value="true">AN</option>
-      </select>
-
-      <span>OUT:</span>
-      <select id="outMode">
-        <option value="straight" selected>AUS</option>
-        <option value="double">AN</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Zeile 3 -->
-  <div class="controlsLine">
-    <div class="controlsGroup">
-      <span>Auto-OK:</span>
-      <select id="autoOk">
-        <option value="true" selected>AN</option>
-        <option value="false">AUS</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Buttons -->
-  <div class="controlsLine">
-    <div class="controlsGroup">
-      <button id="randomStarterBtn">🎲 Startspieler</button>
-      <span class="pill" id="starterInfo">Startspieler: Spieler 1</span>
-      <button id="startGameBtn">Spiel starten</button>
-    </div>
-  </div>
-
-      </div>
         <!-- Zeile 2 -->
         <div class="controlsLine">
           <div class="controlsGroup">
@@ -174,19 +141,34 @@
               <option value="true">AN</option>
             </select>
 
+            <span>OUT:</span>
+            <select id="outMode">
+              <option value="straight" selected>AUS</option>
+              <option value="double">AN</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Zeile 3 -->
+        <div class="controlsLine">
+          <div class="controlsGroup">
             <span>Auto-OK:</span>
             <select id="autoOk">
               <option value="true" selected>AN</option>
               <option value="false">AUS</option>
             </select>
           </div>
+        </div>
 
+        <!-- Buttons -->
+        <div class="controlsLine">
           <div class="controlsGroup">
             <button id="randomStarterBtn">🎲 Startspieler</button>
             <span class="pill" id="starterInfo">Startspieler: Spieler 1</span>
             <button id="startGameBtn">Spiel starten</button>
           </div>
         </div>
+
       </div>
 
       <div style="margin-top:12px;font-weight:900">Spielernamen</div>
@@ -305,7 +287,8 @@
     return name ? name : getDefaultName(i);
   }
   function updateStarterInfo(){
-    $("starterInfo").textContent = `Startspieler: ${getStarterName()}`;
+    const el = $("starterInfo");
+    if(el) el.textContent = `Startspieler: ${getStarterName()}`;
   }
 
   function newPlayer(name){
@@ -382,21 +365,18 @@
 
       const inp = document.createElement("input");
       inp.type="text";
-      // leer anzeigen, aber intern Default behalten
       inp.value = setup.names[i] && !setup.names[i].startsWith("Spieler ") ? setup.names[i] : "";
       inp.placeholder = getDefaultName(i);
 
       inp.addEventListener("input", ()=>{
         const v = inp.value.trim();
         setup.names[i] = v ? v : getDefaultName(i);
-        // Wenn der Startspieler gerade dieser Spieler ist -> Anzeige sofort updaten
         updateStarterInfo();
       });
 
       wrap.appendChild(inp);
     }
 
-    // Starter validieren + Anzeige
     if(setup.starter >= setup.playerCount) setup.starter = 0;
     updateStarterInfo();
   }
@@ -488,7 +468,7 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    game.mode = "S"; // reset to single
+    game.mode = "S";
 
     renderInput();
     renderMode();
