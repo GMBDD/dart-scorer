@@ -17,8 +17,10 @@
 
 *{box-sizing:border-box}
 
-body{
+html,body{
   margin:0;
+  height:100%;
+  overflow:hidden; /* BODY SCROLL AUS */
   font-family:Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
@@ -26,7 +28,8 @@ body{
 
 /* ===== SCROLLBEREICH ===== */
 #app{
-  min-height:100vh;
+  height:100%;
+  overflow:auto; /* NUR APP SCROLLT */
   padding-bottom:calc(var(--panelHeight) + env(safe-area-inset-bottom));
 }
 
@@ -79,7 +82,7 @@ button,select{
   outline:2px solid var(--accent);
 }
 
-/* ===== PANEL ROOT ===== */
+/* ===== PANEL ===== */
 #panelRoot{
   position:fixed;
   left:0;
@@ -161,7 +164,7 @@ button,select{
 
 <header>
   <strong>🎯 Darts Scoring</strong>
-  <span class="version">Build: 2026-02-17 B</span>
+  <span class="version">Build: 2026-02-17 C</span>
 
   <span>Start:</span>
   <select id="startScore">
@@ -191,7 +194,7 @@ button,select{
 </div>
 
 
-<!-- ===== FIXED PANEL ===== -->
+<!-- PANEL -->
 <div id="panelRoot">
   <div class="panelInner">
 
