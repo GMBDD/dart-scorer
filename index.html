@@ -7,7 +7,12 @@
 <style>
   :root{
     --bg:#0f0f12; --card:#17171c; --text:#f2f2f2; --muted:#a7a7b0; --line:#2a2a33;
-    --btn:#121218; --btn2:#1c1c24; --accent:#4da3ff; --ok:#bfffc0; --bad:#ffb3b3;
+    --btn:#121218; --btn2:#1c1c24; --accent:#3a3a44; --ok:#bfffc0; --bad:#ffb3b3;
+
+    --btn-border:#2f2f3a;
+    --btn-hover:#1a1a22;
+    --btn-press:#242432;
+    --btn-glow:rgba(255,255,255,0.08);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -18,38 +23,23 @@
   }
   header strong{font-size:16px}
   .ver{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
-
-  /* ===== BUTTONS (leicht farbiger Rand + stärker beim Drücken) ===== */
+  button,select,input{
+    padding:10px 14px;font-size:16px;border-radius:12px;border:1px solid var(--line);
+    background:var(--btn);color:var(--text);
+  }
   button{
-    padding:10px 14px;
-    font-size:16px;
     cursor:pointer;
-    border-radius:12px;
-    border:1px solid rgba(77,163,255,0.35); /* leicht farbig */
-    background: var(--btn);
-    color: var(--text);
-    transition: border-color .12s ease, box-shadow .12s ease, transform .06s ease, background .12s ease;
+    border:1px solid var(--btn-border);
+    transition:all .12s ease;
+    box-shadow:0 0 0 1px transparent;
   }
-  button:hover{
-    border-color: rgba(77,163,255,0.65);
-  }
+  button:hover{ background:var(--btn-hover); border-color:#3a3a48; }
   button:active{
-    border-color: var(--accent);
-    box-shadow: 0 0 8px rgba(77,163,255,0.7);
-    transform: scale(0.98);
+    background:var(--btn-press);
+    transform:scale(0.97);
+    box-shadow:0 0 0 2px var(--btn-glow) inset;
   }
-  button:disabled{opacity:.45;cursor:default;box-shadow:none;transform:none}
-
-  select,input{
-    padding:9px 10px;
-    font-size:16px;
-    border-radius:12px;
-    border:1px solid var(--line);
-    background:#121218;
-    color:var(--text);
-    text-align:center;
-  }
-
+  button:disabled{opacity:.45;cursor:default}
   .wrap{max-width:1100px;margin:0 auto;padding:14px}
   .grid{display:grid;gap:12px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
@@ -57,16 +47,13 @@
   .rowLeft{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:999px}
   .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:8px}
-  .hidden{display:none !important;}
 
-  /* Setup controls */
   .controls2{display:flex;flex-direction:column;gap:10px;margin-top:10px}
   .controlsLine{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
   .controlsGroup{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .names{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .names input{width:180px;text-align:left}
 
-  /* Score overview */
   .scoreTop{
     max-height:220px; overflow:auto; border-radius:14px; border:1px solid var(--line);
     background:#101016; padding:8px;
@@ -76,13 +63,12 @@
     padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;
     background:#0f0f14;
   }
-  .playerItem.active{outline:2px solid rgba(77,163,255,0.65)}
+  .playerItem.active{outline:2px solid var(--accent)}
   .playerItem.win{opacity:.65}
   .pName{font-weight:900}
   .pMeta{font-size:12px;color:var(--muted);margin-top:2px}
   .pScore{font-size:28px;font-weight:950;min-width:70px;text-align:right}
 
-  /* Input panel */
   .bigScore{font-size:48px;font-weight:950;text-align:center;margin:14px 0 6px}
   .dartRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .dartBox{
@@ -96,15 +82,16 @@
 
   .modes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
   .modeBtn{background:var(--btn2)}
-  .modeBtn.active{outline:2px solid rgba(77,163,255,0.65)}
+  .modeBtn.active{outline:2px solid var(--accent)}
 
-  .nums{display:grid;gap:8px;grid-template-columns:repeat(5,1fr);max-width:520px;margin:0 auto 10px}
-  .nums button{padding:12px 0}
-  .specials{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .nums{display:grid;gap:12px;grid-template-columns:repeat(5,1fr);max-width:560px;margin:0 auto 10px}
+  .nums button{padding:16px 0;font-size:20px;border-radius:16px}
+  .specials{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  .specials button{padding:14px 18px;font-size:18px;border-radius:16px}
 
-  /* Bottom actions: only Undo + OK */
-  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
-  .actions button{min-width:140px}
+  .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .actions button{min-width:160px;padding:14px 18px;font-size:18px;border-radius:16px}
+  .hidden{display:none !important;}
 
   @media (max-width: 980px){
     .nums{grid-template-columns:repeat(4,1fr)}
@@ -117,11 +104,11 @@
 <header>
   <strong>🎯 Darts Scoring</strong>
   <span class="ver">Build: 2026-02-17 K</span>
+
   <button id="toSetupBtn" class="hidden">⚙ Setup</button>
   <button id="toGameBtn" class="hidden">🎯 Spiel</button>
 </header>
 
-<!-- ===== SETUP SCREEN ===== -->
 <section id="setupScreen" class="wrap">
   <div class="grid">
     <div class="card">
@@ -130,11 +117,12 @@
           <div style="font-weight:950">Setup</div>
           <span class="pill">erst konfigurieren, dann scoring</span>
         </div>
+        <div class="rowLeft">
+          <button id="resetSavedBtn" title="Gespeichertes Spiel löschen">🗑 Reset</button>
+        </div>
       </div>
 
       <div class="controls2">
-
-        <!-- Zeile 1: Start + Spieler -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>Start:</span>
@@ -153,24 +141,22 @@
           </div>
         </div>
 
-        <!-- Zeile 2: IN + OUT -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>IN:</span>
             <select id="doubleIn">
               <option value="false" selected>AUS</option>
-              <option value="true">DOUBLE</option>
+              <option value="true">AN</option>
             </select>
 
             <span>OUT:</span>
             <select id="outMode">
               <option value="straight" selected>AUS</option>
-              <option value="double">DOUBLE</option>
+              <option value="double">AN</option>
             </select>
           </div>
         </div>
 
-        <!-- Zeile 3: Auto-OK -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <span>Auto-OK:</span>
@@ -181,7 +167,6 @@
           </div>
         </div>
 
-        <!-- Buttons -->
         <div class="controlsLine">
           <div class="controlsGroup">
             <button id="randomStarterBtn">🎲 Startspieler</button>
@@ -189,18 +174,16 @@
             <button id="startGameBtn">Spiel starten</button>
           </div>
         </div>
-
       </div>
 
       <div style="margin-top:12px;font-weight:900">Spielernamen</div>
       <div id="nameInputs" class="names"></div>
 
-      <div class="hint">Setup → „Spiel starten“. Danach Scoring-Screen ohne Overlap.</div>
+      <div class="hint">Das Spiel wird automatisch gespeichert. Wenn du Chrome verlässt, kannst du danach weiterspielen.</div>
     </div>
   </div>
 </section>
 
-<!-- ===== GAME SCREEN ===== -->
 <section id="gameScreen" class="wrap hidden">
   <div class="grid">
     <div class="card">
@@ -229,7 +212,6 @@
         </div>
       </div>
 
-      <!-- LIVE Remaining -->
       <div class="bigScore" id="currentScore">—</div>
 
       <div class="dartRow">
@@ -260,16 +242,14 @@
         <button id="okBtn" type="button">OK</button>
       </div>
 
-      <div class="hint">Modus wählen → Zahl klicken. <b>Nach jeder Eingabe springt es zurück auf Single.</b></div>
+      <div class="hint">Modus wählen → Zahl klicken. Nach jeder Eingabe springt es zurück auf Single.</div>
     </div>
   </div>
 </section>
 
 <script>
   const $ = (id)=>document.getElementById(id);
-  const esc = (s)=> (s??"").toString()
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  const STORAGE_KEY = "dart_scorer_state_v1";
 
   function clone(obj){
     if (typeof structuredClone === "function") return structuredClone(obj);
@@ -297,6 +277,52 @@
 
   const HISTORY_LIMIT = 200;
 
+  // ---------- Persistenz ----------
+  function serializeState(){
+    return {
+      v: 1,
+      ts: Date.now(),
+      setup: clone(setup),
+      game: {
+        players: clone(game.players),
+        current: game.current,
+        mode: game.mode,
+        darts: clone(game.darts),
+        dartIdx: game.dartIdx,
+        history: clone(game.history) // Undo soll nach Reload weiter funktionieren
+      },
+      ui: {
+        onGameScreen: !$("gameScreen").classList.contains("hidden")
+      }
+    };
+  }
+  function saveToStorage(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState()));
+    }catch(e){
+      // falls Storage voll/gesperrt: einfach ignorieren
+    }
+  }
+  function clearStorage(){
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  }
+  function loadFromStorage(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return null;
+      const data = JSON.parse(raw);
+      if(!data || data.v !== 1) return null;
+      return data;
+    }catch(e){
+      return null;
+    }
+  }
+
+  // Speichern auch beim Tab-Wechsel/Schließen
+  window.addEventListener("pagehide", saveToStorage);
+  document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveToStorage(); });
+
+  // ---------- Helpers ----------
   function getDefaultName(i){ return `Spieler ${i+1}`; }
   function getStarterName(){
     const i = Math.max(0, Math.min(setup.starter, setup.playerCount-1));
@@ -307,7 +333,6 @@
     const el = $("starterInfo");
     if(el) el.textContent = `Startspieler: ${getStarterName()}`;
   }
-
   function newPlayer(name){
     return {
       name,
@@ -318,6 +343,7 @@
     };
   }
 
+  // ---------- Undo ----------
   function snapshot(){
     return {
       setup: clone(setup),
@@ -333,6 +359,7 @@
   function saveState(){
     game.history.push(snapshot());
     if (game.history.length > HISTORY_LIMIT) game.history.shift();
+    saveToStorage();
   }
   function undo(){
     if(!game.history.length) return;
@@ -340,19 +367,23 @@
     setup = clone(snap.setup);
     Object.assign(game, clone(snap.game));
     renderAll();
+    saveToStorage();
   }
 
+  // ---------- Navigation ----------
   function showSetup(){
     $("setupScreen").classList.remove("hidden");
     $("gameScreen").classList.add("hidden");
     $("toSetupBtn").classList.add("hidden");
     $("toGameBtn").classList.add("hidden");
+    saveToStorage();
   }
   function showGame(){
     $("setupScreen").classList.add("hidden");
     $("gameScreen").classList.remove("hidden");
     $("toSetupBtn").classList.remove("hidden");
     $("toGameBtn").classList.add("hidden");
+    saveToStorage();
   }
 
   $("toSetupBtn").addEventListener("click", ()=>{
@@ -367,6 +398,7 @@
     renderAll();
   });
 
+  // ---------- Setup UI ----------
   function renderSetup(){
     $("startScore").value = String(setup.startScore);
     $("playerCount").value = String(setup.playerCount);
@@ -388,6 +420,7 @@
         const v = inp.value.trim();
         setup.names[i] = v ? v : getDefaultName(i);
         updateStarterInfo();
+        saveToStorage();
       });
 
       wrap.appendChild(inp);
@@ -395,6 +428,7 @@
 
     if(setup.starter >= setup.playerCount) setup.starter = 0;
     updateStarterInfo();
+    saveToStorage();
   }
 
   function readSetupFromControls(){
@@ -412,6 +446,7 @@
 
     if(setup.starter >= setup.playerCount) setup.starter = 0;
     updateStarterInfo();
+    saveToStorage();
   }
 
   ["playerCount","startScore","doubleIn","outMode","autoOk"].forEach(id=>{
@@ -422,8 +457,21 @@
     readSetupFromControls();
     setup.starter = Math.floor(Math.random()*setup.playerCount);
     updateStarterInfo();
+    saveToStorage();
   });
 
+  $("resetSavedBtn").addEventListener("click", ()=>{
+    if(confirm("Gespeichertes Spiel wirklich löschen?")){
+      clearStorage();
+      // auch laufendes Spiel leeren
+      game = { players: [], current: 0, mode: "S", darts: [null,null,null], dartIdx: 0, history: [] };
+      setup = { startScore: 301, playerCount: 2, doubleIn: false, outMode: "straight", autoOk: true, names:["Spieler 1","Spieler 2"], starter: 0 };
+      renderSetup();
+      showSetup();
+    }
+  });
+
+  // ---------- Game Logic ----------
   function startNewGame(){
     readSetupFromControls();
     game.players = [];
@@ -437,11 +485,14 @@
     game.history = [];
     showGame();
     renderAll();
+    saveToStorage();
   }
+
   $("startGameBtn").addEventListener("click", startNewGame);
 
   $("newBtn").addEventListener("click", ()=>{
     if(confirm("Neues Spiel starten? (aktueller Stand geht verloren)")){
+      // Start über Setup, aber gespeicherter State bleibt bis neues Spiel gestartet wird
       showSetup();
       renderSetup();
     }
@@ -472,9 +523,9 @@
     game.mode = m;
     renderMode();
     renderHeader();
+    saveToStorage();
   }
 
-  // ===== LIVE Remaining (IN/OUT berücksichtigt) =====
   function computeEffectiveDartsForCurrent(){
     const p = game.players[game.current];
     const filled = game.darts.map(d => d ?? ({label:"0", points:0, isDouble:false, isTriple:false}));
@@ -507,15 +558,14 @@
     const subtotal = effective.reduce((sum,d)=>sum + (d?.points||0), 0);
     const remaining = p.score - subtotal;
 
-    // Bust sofort beenden
     if(remaining < 0 || (setup.outMode==="double" && remaining === 1)){
       p.msg = "BUST";
       nextPlayer();
       renderAll();
+      saveToStorage();
       return;
     }
 
-    // Checkout sofort beenden
     if(remaining === 0){
       if(setup.outMode === "double"){
         const lastIdx = Math.max(0, game.dartIdx - 1);
@@ -524,25 +574,27 @@
           p.msg = "BUST (kein Double-Out)";
           nextPlayer();
           renderAll();
+          saveToStorage();
           return;
         }
       }
-      // falls IN jetzt geöffnet wurde
       if(setup.doubleIn && !p.opened){
         const idx = effective.findIndex(d=>d.isDouble && d.points>0);
         if(idx !== -1) p.opened = true;
       }
+
       p.score = 0;
       p.won = true;
       p.msg = "WIN ✅";
       nextPlayer();
       renderAll();
+      saveToStorage();
       return;
     }
 
-    // nur UI aktualisieren (Rest live)
     renderHeader();
     renderInput();
+    saveToStorage();
   }
 
   function pushDart(obj){
@@ -553,20 +605,18 @@
     game.darts[game.dartIdx] = obj;
     game.dartIdx++;
 
-    // immer zurück auf Single
-    game.mode = "S";
+    game.mode = "S"; // reset to single
 
     renderInput();
     renderMode();
     renderHeader();
 
-    // LIVE Prüfung nach jedem Pfeil
     evaluateAfterEachDart();
 
-    // Auto-OK nach 3 Darts (wenn Turn nicht schon beendet wurde)
     if(ensureActive() && game.dartIdx===3 && setup.autoOk){
       setTimeout(()=>{ if(ensureActive() && game.dartIdx===3) submitTurn(); }, 120);
     }
+    saveToStorage();
   }
 
   function pickNumber(n){
@@ -598,6 +648,7 @@
         p.msg="Kein IN → 0";
         nextPlayer();
         renderAll();
+        saveToStorage();
         return;
       }
       p.opened = true;
@@ -611,6 +662,7 @@
       p.msg="BUST";
       nextPlayer();
       renderAll();
+      saveToStorage();
       return;
     }
 
@@ -621,6 +673,7 @@
           p.msg="BUST (kein Double-Out)";
           nextPlayer();
           renderAll();
+          saveToStorage();
           return;
         }
       }
@@ -629,6 +682,7 @@
       p.msg="WIN ✅";
       nextPlayer();
       renderAll();
+      saveToStorage();
       return;
     }
 
@@ -636,11 +690,13 @@
     p.msg = total>0 ? `−${total}` : "";
     nextPlayer();
     renderAll();
+    saveToStorage();
   }
 
+  // ---------- Rendering ----------
   function renderRules(){
-    const inTxt = setup.doubleIn ? "IN DOUBLE" : "IN AUS";
-    const outTxt = (setup.outMode==="double") ? "OUT DOUBLE" : "OUT AUS";
+    const inTxt = setup.doubleIn ? "IN AN" : "IN AUS";
+    const outTxt = (setup.outMode==="double") ? "OUT AN" : "OUT AUS";
     $("rulesPill").textContent = `${setup.startScore} · ${inTxt} · ${outTxt} · Auto-OK ${setup.autoOk ? "AN":"AUS"}`;
   }
 
@@ -650,15 +706,11 @@
     game.players.forEach((p,i)=>{
       const div = document.createElement("div");
       div.className = "playerItem" + (i===game.current && !p.won ? " active":"") + (p.won ? " win":"");
-
-      const inState = setup.doubleIn
-        ? `DOUBLE (${p.opened ? "offen" : "zu"})`
-        : "AUS";
-
+      const inState = setup.doubleIn ? (p.opened ? "open" : "closed") : "aus";
       div.innerHTML = `
         <div style="min-width:0">
-          <div class="pName">${esc(p.name)} ${p.won?"✅":""}</div>
-          <div class="pMeta">IN: ${inState} · ${p.msg ? esc(p.msg) : "&nbsp;"}</div>
+          <div class="pName">${p.name} ${p.won?"✅":""}</div>
+          <div class="pMeta">IN: ${inState} · ${p.msg ? p.msg : "&nbsp;"}</div>
         </div>
         <div class="pScore">${p.score}</div>
       `;
@@ -669,21 +721,11 @@
   function renderHeader(){
     const p = game.players[game.current];
     $("currentName").textContent = p ? p.name : "—";
+    $("currentScore").textContent = p ? getLiveRemaining() : "—";
 
-    // LIVE Remaining:
-    const live = p ? getLiveRemaining() : "—";
-    $("currentScore").textContent = live;
-
-    const inTxt = setup.doubleIn
-      ? `IN: DOUBLE (${p.opened ? "offen" : "zu"})`
-      : "IN: AUS";
-
-    const outTxt = (setup.outMode==="double")
-      ? "OUT: DOUBLE"
-      : "OUT: AUS";
-
+    const inTxt = setup.doubleIn ? (p.opened ? "IN: open" : "IN: closed") : "IN: aus";
+    const outTxt = (setup.outMode==="double") ? "OUT: double" : "OUT: straight";
     $("diState").textContent = `${inTxt} · ${outTxt}`;
-
     $("modeInfo").textContent =
       `Modus: ${game.mode==="S"?"Single":game.mode==="D"?"Double":"Triple"} · Dart ${Math.min(game.dartIdx+1,3)}/3`;
   }
@@ -691,7 +733,7 @@
   function renderInput(){
     const box = (el, obj)=>{
       if(!obj){ el.innerHTML = `—<small>&nbsp;</small>`; return; }
-      el.innerHTML = `${esc(obj.label)}<small>${obj.points} pts</small>`;
+      el.innerHTML = `${obj.label}<small>${obj.points} pts</small>`;
     };
     box($("d0"), game.darts[0]);
     box($("d1"), game.darts[1]);
@@ -724,9 +766,10 @@
     renderHeader();
     renderInput();
     renderMode();
+    saveToStorage();
   }
 
-  // Buttons
+  // ---------- Events ----------
   $("undoBtn").addEventListener("click", undo);
   $("okBtn").addEventListener("click", submitTurn);
 
@@ -738,7 +781,6 @@
   $("bBull").addEventListener("click", ()=>pickSpecial("BULL"));
   $("bMiss").addEventListener("click", ()=>pickSpecial("MISS"));
 
-  // Zahlen 1-20
   const nums = $("nums");
   for(let n=1;n<=20;n++){
     const b=document.createElement("button");
@@ -747,9 +789,50 @@
     nums.appendChild(b);
   }
 
-  // init
-  renderSetup();
-  showSetup();
+  // ---------- Boot ----------
+  function boot(){
+    // Standard UI initial
+    renderSetup();
+
+    const saved = loadFromStorage();
+    if(saved && saved.setup && saved.game){
+      // State übernehmen
+      setup = clone(saved.setup);
+      // minimal validieren
+      if(!Array.isArray(setup.names)) setup.names = [];
+      if(typeof setup.playerCount !== "number") setup.playerCount = 2;
+
+      const g = saved.game;
+      game.players = Array.isArray(g.players) ? g.players : [];
+      game.current = typeof g.current === "number" ? g.current : 0;
+      game.mode = g.mode || "S";
+      game.darts = Array.isArray(g.darts) ? g.darts : [null,null,null];
+      game.dartIdx = typeof g.dartIdx === "number" ? g.dartIdx : 0;
+      game.history = Array.isArray(g.history) ? g.history : [];
+
+      // Wenn ein Spiel existiert, fragen ob fortsetzen
+      if(game.players && game.players.length){
+        const ok = confirm("Gespeichertes Spiel gefunden. Weiterspielen?");
+        if(ok){
+          showGame();
+          renderAll();
+          return;
+        } else {
+          // Benutzer will nicht: saved löschen, im Setup bleiben
+          clearStorage();
+          game = { players: [], current: 0, mode: "S", darts: [null,null,null], dartIdx: 0, history: [] };
+          renderSetup();
+          showSetup();
+          return;
+        }
+      }
+    }
+
+    // Kein saved game
+    showSetup();
+  }
+
+  boot();
 </script>
 
 </body>
